@@ -3,6 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# macOS system files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
 # C extensions
 *.so
 
@@ -192,3 +201,7 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Resume files
+resumes/original/*.docx
+resumes/parsed/*.json

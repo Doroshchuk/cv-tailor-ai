@@ -1,5 +1,8 @@
 from docx import Document
 from .enums import ResumeSectionType
+import json
+import os
+import re
 
 
 class ResumeParser:
@@ -49,3 +52,110 @@ class ResumeParser:
         except Exception as e:
             print(f"Error parsing resume sections: {e}")
             return {}
+
+    def parse_resume_header(self, header_text: list[str]) -> dict[str, str]:
+        parsed_header = {}
+        parsed_header["name"] = header_text[0]
+        parsed_header["location"] = header_text[1]
+        parsed_header["phone"] = header_text[2].split(" ∙ ")[0].strip()
+        parsed_header["email"] = header_text[2].split(" ∙ ")[1].strip()
+        # parse LinkedIn, GitHub links
+        parsed_header["work_authorized"] = header_text[3]
+        return parsed_header
+
+    def parse_resume_professional_summary(self, professional_summary_text: list[str]) -> dict[str, str]:
+        parsed_professional_summary = {}
+        parsed_professional_summary["summary"] = professional_summary_text[0]
+        parsed_professional_summary["highlights"] = professional_summary_text[1:]
+        return parsed_professional_summary
+    
+    def parse_resume_technical_skills(self, technical_skills_text: list[str]) -> dict[str, str]:
+        parsed_technical_skills = {}
+        parsed_technical_skills["skills"] = technical_skills_text
+        return parsed_technical_skills
+
+    def parse_resume_professional_experience(self, experience_list: list[str]) -> list[dict]:
+        positions = []
+        experience_text = "\n".join(experience_list)
+        parsed_experience = []
+        script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
+        with open(os.path.join(script_dir, "configs/positions.json"), "r") as f:
+            roles = dict(json.load(f))
+            for role in roles:
+                positions.extend(roles[role]["aliases"])
+
+         # Regex to find each position and its start line
+        position_pattern = re.compile(rf"({'|'.join(map(re.escape, positions))})\s+(\d{{2}}/\d{{4}}.*?)\n")
+        matches = list(position_pattern.finditer(experience_text))
+        for i, match in enumerate(matches):
+            position = match.group(1).strip()
+            dates = match.group(2).strip()
+
+            # Capture block of experience text
+            start_idx = match.end()
+            end_idx = matches[i + 1].start() if i + 1 < len(matches) else len(experience_text)
+            block = experience_text[start_idx:end_idx].strip()
+            lines = block.splitlines()
+
+            # Extract company line, location line, and company description
+            company = lines[0].split("|")[0].strip()
+            location = lines[0].split("|")[1].strip()
+            company_description = lines[1].strip()
+            project_description = lines[2].strip() if lines[2].startswith("Project") else None
+            bullet_lines = lines[2:] if not project_description else lines[3:]
+
+            # Clean and collect bullets
+            bullets = [
+                line.strip()
+                for line in bullet_lines
+            ]
+
+            experience = {
+                "position": position,
+                "dates": dates,
+                "company": company,
+                "location": location,
+                "company_description": company_description,
+                "project_description": project_description,
+                "bullets": bullets
+            }
+            parsed_experience.append(experience)
+        return parsed_experience
+
+    def parse_resume_education(self, education_text: list[str]) -> dict[str, str]:
+        parsed_education = {}
+        parsed_education["university"] = education_text[0].split(",")[0].strip()
+        parsed_education["country"] = education_text[0].split(",")[1].strip()
+        degrees = []
+        for raw in education_text[1:]:
+            degree = {}
+            degree["degree"] = raw.split(",")[0].strip()
+            degree["field_of_study"] = raw.split(",")[1].strip()
+            degree["year_of_graduation"] = raw.split(",")[2].strip()
+            degrees.append(degree)
+        parsed_education["degrees"] = degrees
+        return parsed_education
+    
+    def parse_resume_professional_development(self, professional_development_text: list[str]) -> dict[str, str]:
+        parsed_professional_development = {}
+        parsed_professional_development["projects_or_certifications"] = professional_development_text
+        return parsed_professional_development
+
+    def parse_detailed_sections(self, sections: dict[ResumeSectionType, list[str]]) -> dict:
+        parsed_sections = {}
+        for section_type, section_text in sections.items():
+            if section_type == ResumeSectionType.HEADER:
+                parsed_sections[section_type] = self.parse_resume_header(section_text)
+            elif section_type == ResumeSectionType.PROFESSIONAL_SUMMARY:
+                parsed_sections[section_type] = self.parse_resume_professional_summary(section_text)
+            elif section_type == ResumeSectionType.TECHNICAL_SKILLS:
+                parsed_sections[section_type] = self.parse_resume_technical_skills(section_text)
+            elif section_type == ResumeSectionType.PROFESSIONAL_EXPERIENCE:
+                parsed_sections[section_type] = self.parse_resume_professional_experience(section_text)
+            elif section_type == ResumeSectionType.EDUCATION:
+                parsed_sections[section_type] = self.parse_resume_education(section_text)
+            elif section_type == ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS:
+                parsed_sections[section_type] = self.parse_resume_professional_development(section_text)
+            else:
+                parsed_sections[section_type] = section_text
+        return parsed_sections     

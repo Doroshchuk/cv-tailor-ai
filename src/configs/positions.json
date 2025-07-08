@@ -1,0 +1,10 @@
+{
+    "SDET": {
+      "aliases": ["Software Development Engineer In Test", "SDET"],
+      "category": "ENGINEERING"
+    },
+    "Automation Test Engineer": {
+      "aliases": ["QA Automation Engineer", "Test Automation Engineer", "Automation Test Engineer"],
+      "category": "ENGINEERING"
+    }
+  }

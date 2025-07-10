@@ -60,6 +60,33 @@ class ResumeParser:
             print(f"Error parsing resume sections: {e}")
             return {}
 
+    def _check_if_section_empty(self, section_text: list[str], section_type: ResumeSectionType) -> bool:
+        if not section_text:
+            print(f"Warning: {section_type.value} section is empty")
+            return True
+        return False
+
+    def _safe_split(self, text_to_split: str, separator: str, max_splits: int = -1) -> list[str]:
+        if separator in text_to_split:
+            return text_to_split.split(separator, max_splits)
+        return [text_to_split]
+
+    def _clean_text_list(self, text_list: list[str]) -> list[str]:
+        return [text.strip() for text in text_list if text.strip()]
+
+    def _safe_get_and_strip(self, list: list[str], index: int, default_value: str = "") -> str:
+        try:
+            return list[index].strip()
+        except IndexError:
+            return default_value
+
+    def _validate_required_fields(self, parsed_data: dict, required_fields: list[str], section_type: ResumeSectionType) -> bool:
+        missing_fields = [field for field in required_fields if not parsed_data.get(field)]
+        if missing_fields:
+            print(f"Warning: Missing required fields: {missing_fields}")
+            return False
+        return True
+
     def parse_resume_header(self, header_text: list[str]) -> dict[str, str]:
         if not header_text or len(header_text) < 4:
             print("Warning: Header section has insufficient data")
@@ -71,50 +98,50 @@ class ResumeParser:
             parsed_header["location"] = header_text[1]
             contact_info = header_text[2]
             if " ∙ " in contact_info:
-                contact_info_parts = contact_info.split(" ∙ ")
-                parsed_header["phone"] = contact_info_parts[0].strip()
-                parsed_header["email"] = contact_info_parts[1].strip()
+                contact_info_parts = self._safe_split(contact_info, " ∙ ")
+                parsed_header["phone"] = self._safe_get_and_strip(contact_info_parts, 0)
+                parsed_header["email"] = self._safe_get_and_strip(contact_info_parts, 1)
             else:
                 parsed_header["phone"] = contact_info.strip()
                 parsed_header["email"] = None
             # parse LinkedIn, GitHub links
             parsed_header["work_authorized"] = header_text[3]
+            
+            if not self._validate_required_fields(parsed_header, ["name", "location", "phone", "email", "work_authorized"], ResumeSectionType.HEADER):
+                return {}
+
             return parsed_header
         except IndexError as e:
             print(f"Error parsing header: {e}")
             return {}
 
     def parse_resume_professional_summary(self, professional_summary_text: list[str]) -> dict[str, str]:
-        if not professional_summary_text:
-            print("Warning: Education section is empty")
+        if self._check_if_section_empty(professional_summary_text, ResumeSectionType.PROFESSIONAL_SUMMARY):
             return {}
         
         parsed_professional_summary = {}
         try:
-            parsed_professional_summary["summary"] = professional_summary_text[0]
+            parsed_professional_summary["summary"] = self._safe_get_and_strip(professional_summary_text, 0)
             parsed_professional_summary["highlights"] = professional_summary_text[1:]
+
+            if not self._validate_required_fields(parsed_professional_summary, ["summary", "highlights"], ResumeSectionType.PROFESSIONAL_SUMMARY):
+                return {}
+
             return parsed_professional_summary
         except IndexError as e:
             print(f"Error parsing professional summary: {e}")
             return {}
     
     def parse_resume_technical_skills(self, technical_skills_text: list[str]) -> dict[str, str]:
-        if not technical_skills_text:
-            print("Warning: Technical skills section is empty")
+        if self._check_if_section_empty(technical_skills_text, ResumeSectionType.TECHNICAL_SKILLS):
             return {}
 
         parsed_technical_skills = {}
-        parsed_technical_skills["skills"] = [skill.strip() for skill in technical_skills_text]
+        parsed_technical_skills["skills"] = self._clean_text_list(technical_skills_text)
         return parsed_technical_skills
 
-    def parse_resume_professional_experience(self, experience_list: list[str]) -> list[dict]:
-        if not experience_list:
-            print("Warning: Education section is empty")
-            return []
-        
+    def _get_supported_positions(self) -> list[str]:
         positions = []
-        experience_text = "\n".join(experience_list)
-        parsed_experience = []
         script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
         try:
             with open(os.path.join(script_dir, "configs/positions.json"), "r") as f:
@@ -125,6 +152,16 @@ class ResumeParser:
             raise FileNotFoundError(f"Positions config file not found: {e}")
         except json.JSONDecodeError as e:
             raise json.JSONDecodeError(f"Error parsing positions.config: {e}", e.doc, e.pos)
+        return positions
+
+    def parse_resume_professional_experience(self, experience_list: list[str]) -> list[dict]:
+        if not experience_list:
+            print("Warning: Education section is empty")
+            return []
+        
+        experience_text = "\n".join(experience_list)
+        positions = self._get_supported_positions()
+        parsed_experience = []
 
          # Regex to find each position and its start line
         position_pattern = re.compile(rf"({'|'.join(map(re.escape, positions))})\s+(\d{{2}}/\d{{4}}.*?)\n")
@@ -144,22 +181,19 @@ class ResumeParser:
                 continue
 
             if "|" in lines[0]:
-                company_parts = lines[0].split("|")
-                company = company_parts[0].strip()
-                location = company_parts[1].strip()
+                company_parts = self._safe_split(lines[0], "|")
+                company = self._safe_get_and_strip(company_parts, 0)
+                location = self._safe_get_and_strip(company_parts, 1)
             else:
-                company = lines[0].strip()
+                company = self._safe_get_and_strip(lines, 0)
                 location = None
             
-            company_description = lines[1].strip()
-            project_description = lines[2].strip() if lines[2].startswith("Project") else None
+            company_description = self._safe_get_and_strip(lines, 1)
+            project_description = self._safe_get_and_strip(lines, 2) if lines[2].startswith("Project") else None
             bullet_lines = lines[2:] if not project_description else lines[3:]
 
             # Clean and collect bullets
-            bullets = [
-                line.strip()
-                for line in bullet_lines
-            ]
+            bullets = self._clean_text_list(bullet_lines)
 
             experience = {
                 "position": position,
@@ -174,17 +208,16 @@ class ResumeParser:
         return parsed_experience
 
     def parse_resume_education(self, education_text: list[str]) -> dict[str, str]:
-        if not education_text:
-            print("Warning: Education section is empty")
+        if self._check_if_section_empty(education_text, ResumeSectionType.EDUCATION):
             return {}
 
         parsed_education = {}
         try:
             university_line = education_text[0]
             if "," in university_line:
-                parts = university_line.split(",")
-                parsed_education["university"] = parts[0].strip()
-                parsed_education["country"] = parts[1].strip()
+                parts = self._safe_split(university_line, ",")
+                parsed_education["university"] = self._safe_get_and_strip(parts, 0)
+                parsed_education["country"] = self._safe_get_and_strip(parts, 1)
             else:
                 parsed_education["university"] = university_line.strip()
                 parsed_education["country"] = ""
@@ -192,11 +225,11 @@ class ResumeParser:
             degrees = []
             for raw in education_text[1:]:
                 degree = {}
-                raw_parts = raw.split(",")
+                raw_parts = self._safe_split(raw, ",")
                 if len(raw_parts) == 3:
-                    degree["degree"] = raw_parts[0].strip()
-                    degree["field_of_study"] = raw_parts[1].strip()
-                    degree["year_of_graduation"] = raw_parts[2].strip()
+                    degree["degree"] = self._safe_get_and_strip(raw_parts, 0)
+                    degree["field_of_study"] = self._safe_get_and_strip(raw_parts, 1)
+                    degree["year_of_graduation"] = self._safe_get_and_strip(raw_parts, 2)
                 else:
                     degree["degree"] = raw.strip()
                     degree["field_of_study"] = ""
@@ -209,12 +242,11 @@ class ResumeParser:
             return {}
     
     def parse_resume_professional_development(self, professional_development_text: list[str]) -> dict[str, str]:
-        if not professional_development_text:
-            print("Warning: Professional development section is empty")
+        if self._check_if_section_empty(professional_development_text, ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS):
             return {}
         
         parsed_professional_development = {}
-        parsed_professional_development["projects_or_certifications"] = [project.strip() for project in professional_development_text]
+        parsed_professional_development["projects_or_certifications"] = self._clean_text_list(professional_development_text)
         return parsed_professional_development
 
     def parse_detailed_sections(self, sections: dict[ResumeSectionType, list[str]]) -> dict:

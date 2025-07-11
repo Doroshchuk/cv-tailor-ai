@@ -2,7 +2,7 @@ from docx import Document
 from .enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 import os
 import re
-from .utils import TextUtils, ValidationUtils, EnumUtils, PositionUtils
+from .utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
 
 
 class ResumeParser:

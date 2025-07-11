@@ -1,4 +1,4 @@
-from .enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
+from ..enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 from typing import Sequence
 import os
 import json
@@ -43,7 +43,7 @@ class PositionUtils:
     @staticmethod
     def get_supported_positions() -> list[str]:
         positions = []
-        script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
+        script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
         try:
             with open(os.path.join(script_dir, "configs/positions.json"), "r") as f:
                 roles = dict(json.load(f))

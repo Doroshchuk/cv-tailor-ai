@@ -13,4 +13,3 @@ with open(os.path.join(script_dir, "resumes", "parsed","Daria_Doroshchuk_MS_SDET
 parsed_sections = resume_parser.parse_detailed_sections(resume_text)
 with open(os.path.join(script_dir, "resumes", "parsed", "Daria_Doroshchuk_MS_SDET_detailed.json"), "w+") as f:
     json.dump(parsed_sections, f)
-print(parsed_sections)

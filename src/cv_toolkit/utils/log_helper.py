@@ -4,9 +4,11 @@ from enum import Enum
 
 
 class LogLevelEnum(str, Enum):
-    INFO = "INFO",
-    WARNING = "WARNING",
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
     ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 class LogHelper:
     DEFAULT_FORMAT_STRING = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

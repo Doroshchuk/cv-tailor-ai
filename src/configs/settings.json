@@ -1,0 +1,19 @@
+{
+    "resume": {
+        "input_path": "resumes/original/",
+        "output_path": "resumes/parsed/",
+        "supported_formats": [".docx"],
+        "file_name": "Daria_Doroshchuk_MS_SDET"
+    },
+    "logging": {
+        "level": "INFO"
+    },
+    "parsing": {
+        "min_header_lines": 4,
+        "min_role_lines": 3,
+        "header_contact_separator": " ∙ ",
+        "education_degree_separator": ",",
+        "professional_experience_company_location_separator": "|",
+        "education_university_country_separator": ","
+    }
+}

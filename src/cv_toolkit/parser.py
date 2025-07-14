@@ -4,21 +4,17 @@ import os
 import re
 from .utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
 from .utils.log_helper import LogHelper
+from .utils.config_manager import ConfigManager
 
 
 class ResumeParser:
-    MIN_HEADER_LINES = 4
     HEADER_REQUIRED_FIELDS = [HeaderFields.NAME, HeaderFields.LOCATION, HeaderFields.PHONE, HeaderFields.EMAIL, HeaderFields.WORK_AUTHORIZED]
-    MIN_ROLE_LINES = 3
     PROFESSIONAL_SUMMARY_REQUIRED_FIELDS = [ProfessionalSummaryFields.SUMMARY, ProfessionalSummaryFields.HIGHLIGHTS]
-    HEADER_CONTACT_SEPARATOR = " ∙ "
-    EDUCATION_DEGREE_SEPARATOR = ","
-    PROFESSIONAL_EXPERIENCE_COMPANY_LOCATION_SEPARATOR = "|"
-    EDUCATION_UNIVERSITY_COUNTRY_SEPARATOR = ","
     PROFESSIONAL_EXPERIENCE_POSITION_PATTERN = r"({})\s+(\d{{2}}/\d{{4}}.*?)\n"
 
     # TODO: add support for other file formats (pdf, txt, etc.)
     def __init__(self, resume_path: str):
+        self.config = ConfigManager()
         self.logger = LogHelper("resume_parser")
         self.logger.info(f"Initializing parser for: {resume_path}")
         self.resume_path = resume_path
@@ -73,7 +69,7 @@ class ResumeParser:
             return {}
 
     def parse_resume_header(self, header_text: list[str]) -> dict[str, str]:
-        if not header_text or len(header_text) < self.MIN_HEADER_LINES:
+        if not header_text or len(header_text) < self.config.settings.parsing.min_header_lines:
             self.logger.warning(f"HEADER section has insufficient data {header_text}")
             return {}
 
@@ -82,8 +78,8 @@ class ResumeParser:
             parsed_header[HeaderFields.NAME] = header_text[0]
             parsed_header[HeaderFields.LOCATION] = header_text[1]
             contact_info = header_text[2]
-            if self.HEADER_CONTACT_SEPARATOR in contact_info:
-                contact_info_parts = TextUtils.safe_split(contact_info, self.HEADER_CONTACT_SEPARATOR)
+            if self.config.settings.parsing.header_contact_separator in contact_info:
+                contact_info_parts = TextUtils.safe_split(contact_info,  self.config.settings.parsing.header_contact_separator)
                 parsed_header[HeaderFields.PHONE] = TextUtils.safe_get_and_strip(contact_info_parts, 0)
                 parsed_header[HeaderFields.EMAIL] = TextUtils.safe_get_and_strip(contact_info_parts, 1)
             else:
@@ -155,12 +151,12 @@ class ResumeParser:
         block = experience_text[start_idx:end_idx].strip()
         lines = block.splitlines()
 
-        if len(lines) < self.MIN_ROLE_LINES:
+        if len(lines) < self.config.settings.parsing.min_role_lines:
             self.logger.warning(f"Experience #{index} block has insufficient data: {block}")
             return {}
 
-        if self.PROFESSIONAL_EXPERIENCE_COMPANY_LOCATION_SEPARATOR in lines[0]:
-            company_parts = TextUtils.safe_split(lines[0], self.PROFESSIONAL_EXPERIENCE_COMPANY_LOCATION_SEPARATOR)
+        if self.config.settings.parsing.professional_experience_company_location_separator in lines[0]:
+            company_parts = TextUtils.safe_split(lines[0], self.config.settings.parsing.professional_experience_company_location_separator)
             company = TextUtils.safe_get_and_strip(company_parts, 0)
             location = TextUtils.safe_get_and_strip(company_parts, 1)
         else:
@@ -192,8 +188,8 @@ class ResumeParser:
         parsed_education = {}
         try:
             university_line = education_text[0]
-            if self.EDUCATION_UNIVERSITY_COUNTRY_SEPARATOR in university_line:
-                parts = TextUtils.safe_split(university_line, self.EDUCATION_UNIVERSITY_COUNTRY_SEPARATOR)
+            if self.config.settings.parsing.education_university_country_separator in university_line:
+                parts = TextUtils.safe_split(university_line, self.config.settings.parsing.education_university_country_separator)
                 parsed_education[EducationFields.UNIVERSITY] = TextUtils.safe_get_and_strip(parts, 0)
                 parsed_education[EducationFields.COUNTRY] = TextUtils.safe_get_and_strip(parts, 1)
             else:
@@ -203,7 +199,7 @@ class ResumeParser:
             degrees = []
             for raw in education_text[1:]:
                 degree = {}
-                raw_parts = TextUtils.safe_split(raw, self.EDUCATION_DEGREE_SEPARATOR)
+                raw_parts = TextUtils.safe_split(raw, self.config.settings.parsing.education_degree_separator)
                 if len(raw_parts) == 3:
                     degree[EducationFields.DEGREE] = TextUtils.safe_get_and_strip(raw_parts, 0)
                     degree[EducationFields.FIELD_OF_STUDY] = TextUtils.safe_get_and_strip(raw_parts, 1)

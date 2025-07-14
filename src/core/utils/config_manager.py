@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional
 import os
 import json
 from .log_helper import LogHelper
-from .models.settings import SettingsModel
+from ..models.settings import SettingsModel
 from dotenv import load_dotenv
 
 

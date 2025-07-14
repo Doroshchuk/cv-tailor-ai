@@ -2,9 +2,9 @@ from docx import Document
 from .enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 import os
 import re
-from .utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
-from .utils.log_helper import LogHelper
-from .utils.config_manager import ConfigManager
+from ..utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
+from ..utils.log_helper import LogHelper
+from ..utils.config_manager import ConfigManager
 
 
 class ResumeParser:

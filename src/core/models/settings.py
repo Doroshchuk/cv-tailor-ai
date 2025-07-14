@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from ..log_helper import LogLevelEnum
+from ..utils.log_helper import LogLevelEnum
 
 
 class ResumeSettings(BaseModel):

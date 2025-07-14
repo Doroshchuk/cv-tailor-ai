@@ -1,6 +1,6 @@
 import os
-from cv_toolkit.parser import ResumeParser
-from cv_toolkit.utils.config_manager import ConfigManager
+from core.parsing.parser import ResumeParser
+from core.utils.config_manager import ConfigManager
 import json
 
 config = ConfigManager()

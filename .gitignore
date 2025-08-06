@@ -205,3 +205,6 @@ cython_debug/
 # Resume files
 resumes/original/*.docx
 resumes/parsed/*.json
+
+#Virtual environment
+venv_for_cv_tailor_ai/

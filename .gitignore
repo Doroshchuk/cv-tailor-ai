@@ -208,3 +208,7 @@ resumes/parsed/*.json
 
 #Virtual environment
 venv_for_cv_tailor_ai/
+
+#Auth storage
+src/auth/storage_state.json
+src/auth/user_agent.json

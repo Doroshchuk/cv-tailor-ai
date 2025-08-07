@@ -20,7 +20,18 @@ class ParsingSettings(BaseModel):
     professional_experience_company_location_separator: str
     education_university_country_separator: str
 
+class JobscanSettings(BaseModel):
+    user_agent_cache_path: str
+    user_agent_cache_max_age_days: int
+    home_url: str
+    storage_state_path: str
+    locale: str
+    timezone_id: str
+    viewport_width: int
+    viewport_height: int
+
 class SettingsModel(BaseModel):
     resume: ResumeSettings
     logging: LoggingSettings
     parsing: ParsingSettings
+    jobscan: JobscanSettings

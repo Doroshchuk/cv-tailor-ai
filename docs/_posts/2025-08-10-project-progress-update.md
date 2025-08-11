@@ -1,9 +1,8 @@
 ---
 layout: post
-title: "Project Progress Update: Diving into Playwright + Pytest for Web Automation"
+title: "Project Progress Update — Building on My Playwright Foundations"
 ---
 
-🚀 Project Progress Update — Building on My Playwright Foundations
 Since my last update on July 30, I’ve been putting my Playwright + Pytest skills into practice and strengthening my Python fundamentals.
 
 📦 Project Updates

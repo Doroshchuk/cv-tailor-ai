@@ -1,7 +1,7 @@
 from playwright.sync_api import Page, Locator
-from io import sleep
+from time import sleep
 import random
-from src.core.models.settings import PlaywrightSettings
+from core.models.settings import PlaywrightSettings
 
 
 class PlaywrightHelper:
@@ -45,4 +45,4 @@ class PlaywrightHelper:
         x = bounding_box["x"] + bounding_box["width"] / 2
         y = bounding_box["y"] + bounding_box["height"] / 2
         self.human_like_mouse_move_to_selector(page, x, y)
-        element.click(0)
+        self.delayed_hover_and_click(element)

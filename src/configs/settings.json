@@ -17,13 +17,17 @@
         "education_university_country_separator": ","
     },
     "jobscan": {
+        "home_url": "https://app.jobscan.co/dashboard",
+        "storage_state_path": "src/auth/storage_state.json"
+    },
+    "playwright": {
         "user_agent_cache_path": "src/auth/user_agent.json",
         "user_agent_cache_max_age_days": 30,
-        "home_url": "https://app.jobscan.co/dashboard",
-        "storage_state_path": "src/auth/storage_state.json",
         "locale": "en-US",
         "timezone_id": "America/Los_Angeles",
         "viewport_width": 1920,
-        "viewport_height": 1080
+        "viewport_height": 1080,
+        "min_delay": 1.0,
+        "max_delay": 3.0
     }
 }

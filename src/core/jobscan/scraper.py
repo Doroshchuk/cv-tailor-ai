@@ -2,12 +2,13 @@ from playwright.sync_api import sync_playwright, Playwright
 import os
 import json
 from datetime import datetime, timedelta, timezone
-from core.models.settings import JobscanSettings
+from core.models.settings import JobscanSettings, PlaywrightSettings
 
 
 class JobscanScraper:
-    def __init__(self, jobscan_settings: JobscanSettings):
+    def __init__(self, jobscan_settings: JobscanSettings, playwright_settings: PlaywrightSettings):
         self.jobscan_settings = jobscan_settings
+        self.playwright_settings = playwright_settings
 
     @staticmethod
     def get_cached_user_agent(playwright: Playwright, path_to_cached_user_agent: str, max_age_days: int) -> str:
@@ -37,14 +38,14 @@ class JobscanScraper:
             browser = playwright.chromium.launch(headless=False, slow_mo = 500)
             context = browser.new_context(
                 storage_state=self.jobscan_settings.storage_state_path,
-                user_agent=JobscanScraper.get_cached_user_agent(playwright, self.jobscan_settings.user_agent_cache_path, self.jobscan_settings.user_agent_cache_max_age_days),
-                viewport={"width": self.jobscan_settings.viewport_width, "height": self.jobscan_settings.viewport_height},
+                user_agent=JobscanScraper.get_cached_user_agent(playwright, self.playwright_settings.user_agent_cache_path, self.playwright_settings.user_agent_cache_max_age_days),
+                viewport={"width": self.playwright_settings.viewport_width, "height": self.playwright_settings.viewport_height},
                 permissions=[],
                 device_scale_factor=1,
                 is_mobile=False,
                 has_touch=False,
-                locale=self.jobscan_settings.locale,
-                timezone_id=self.jobscan_settings.timezone_id
+                locale=self.playwright_settings.locale,
+                timezone_id=self.playwright_settings.timezone_id
             )
             page = context.new_page()
             page.goto(self.jobscan_settings.home_url)

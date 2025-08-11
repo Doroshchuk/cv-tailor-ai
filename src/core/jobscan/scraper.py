@@ -16,7 +16,7 @@ class JobscanScraper:
             with open(path_to_cached_user_agent, "r") as file:
                 data = json.load(file)
                 generaated_at = datetime.fromisoformat(data["generated_at"])
-                if datetime.now(timezone.utc) - generaated_at > timedelta(days=max_age_days):
+                if datetime.now(timezone.utc) - generaated_at <= timedelta(days=max_age_days):
                     return data["user_agent"]
         browser = playwright.chromium.launch(headless=False)
         context = browser.new_context()

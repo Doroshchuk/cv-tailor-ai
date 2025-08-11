@@ -2,13 +2,19 @@ from playwright.sync_api import sync_playwright, Playwright
 import os
 import json
 from datetime import datetime, timedelta, timezone
-from core.models.settings import JobscanSettings, PlaywrightSettings
+from core.models.settings import JobscanSettings, PlaywrightSettings, ResumeSettings
+from core.jobscan.pages.dashboard_page import DashboardPage
+from core.utils.ui_helpers import PlaywrightHelper
 
 
 class JobscanScraper:
-    def __init__(self, jobscan_settings: JobscanSettings, playwright_settings: PlaywrightSettings):
+    def __init__(self, jobscan_settings: JobscanSettings, playwright_settings: PlaywrightSettings, resume_settings: ResumeSettings):
         self.jobscan_settings = jobscan_settings
         self.playwright_settings = playwright_settings
+        self.playwright_helper = PlaywrightHelper(self.playwright_settings)
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
+        self.resume_path = os.path.join(project_root, resume_settings.input_path, f"{resume_settings.file_name}.docx")
 
     @staticmethod
     def get_cached_user_agent(playwright: Playwright, path_to_cached_user_agent: str, max_age_days: int) -> str:
@@ -33,7 +39,7 @@ class JobscanScraper:
         return user_agent
 
 
-    def login(self) -> None:
+    def run_resume_scan_workflow(self) -> None:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=False, slow_mo = 500)
             context = browser.new_context(
@@ -49,6 +55,8 @@ class JobscanScraper:
             )
             page = context.new_page()
             page.goto(self.jobscan_settings.home_url)
-            page.pause()
             page.wait_for_url(self.jobscan_settings.home_url, timeout=10000)
+            dashboard_page = DashboardPage(page, self.playwright_helper)
+            dashboard_page.upload_resume(self.resume_path)
+            page.pause()
             browser.close()

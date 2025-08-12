@@ -129,7 +129,7 @@ class ResumeParser:
             return []
         
         experience_text = "\n".join(experience_list)
-        positions = PositionUtils.get_supported_positions()
+        positions = PositionUtils.get_supported_positions(self.config.settings.resume.path_to_positions_file)
         parsed_experience = []
 
         # Regex to find each position and its start line

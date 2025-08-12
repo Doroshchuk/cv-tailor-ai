@@ -13,10 +13,19 @@ class DashboardPage:
         self.job_description_text_area = self.page.locator("textarea#jobDescriptionInput")
         self.scan_button = self.page.get_by_role("button", name="Scan")
 
-    def upload_resume(self, path_to_resume: str):
+    def upload_resume(self, path_to_resume: str) -> None:
         self.playwright_helper.human_like_mouse_move_and_click(self.page, self.resume_text_area)
         with self.page.expect_file_chooser() as fch:
             self.playwright_helper.delayed_hover_and_click(self.resume_drag_and_drop_button)
             fch.value.set_files(path_to_resume)
+
+    def fill_job_description(self, job_description: str) -> None:
+        self.playwright_helper.human_like_mouse_move_and_click(self.page, self.job_description_text_area)
+        self.job_description_text_area.fill(job_description)
+
+    def scan(self, path_to_resume: str, job_description: str) -> None:
+        self.upload_resume(path_to_resume)
+        self.fill_job_description(job_description)
+        self.playwright_helper.human_like_mouse_move_and_click(self.page, self.scan_button)
 
 

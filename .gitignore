@@ -206,9 +206,12 @@ cython_debug/
 resumes/original/*.docx
 resumes/parsed/*.json
 
-#Virtual environment
+# Virtual environment
 venv_for_cv_tailor_ai/
 
-#Auth storage
+# Auth storage
 src/auth/storage_state.json
 src/auth/user_agent.json
+
+# Job details
+src/configs/job_to_target.json

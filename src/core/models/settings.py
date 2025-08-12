@@ -8,6 +8,10 @@ class ResumeSettings(BaseModel):
     output_path: str
     supported_formats: List[str]
     file_name: str
+    path_to_positions_file: str
+
+class JobDetails(BaseModel):
+    path_to_job_details_file: str
 
 class LoggingSettings(BaseModel):
     level: LogLevelEnum
@@ -36,6 +40,7 @@ class PlaywrightSettings(BaseModel):
 
 class SettingsModel(BaseModel):
     resume: ResumeSettings
+    job: JobDetails
     logging: LoggingSettings
     parsing: ParsingSettings
     jobscan: JobscanSettings

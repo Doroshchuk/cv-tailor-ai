@@ -1,4 +1,5 @@
 from logging import Logger
+from core.models.job_to_target import JobDetails
 from ..parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 from typing import Sequence
 import os
@@ -49,11 +50,11 @@ class ValidationUtils:
 
 class PositionUtils:
     @staticmethod
-    def get_supported_positions(logger: Logger | None = None) -> list[str]:
+    def get_supported_positions(path_to_file: str, logger: Logger | None = None) -> list[str]:
         positions = []
         script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
         try:
-            with open(os.path.join(script_dir, "configs/positions.json"), "r") as f:
+            with open(os.path.join(script_dir, path_to_file), "r") as f:
                 roles = dict(json.load(f))
                 for role in roles:
                     positions.extend(roles[role]["aliases"])
@@ -68,6 +69,20 @@ class PositionUtils:
                 logger.error(error_message)
             raise json.JSONDecodeError(error_message, e.doc, e.pos)
         return positions
+
+class JobParserUtils:
+    @staticmethod
+    def parse_job_details(path_to_file: str, logger: Logger | None = None) -> JobDetails:
+        script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+        try:
+            with open(os.path.join(script_dir, path_to_file), "r") as f:
+                job_details = json.load(f)
+        except FileNotFoundError as e:
+            error_message = f"Job config file not found: {e}"
+            if logger:
+                logger.error(error_message)
+                raise FileNotFoundError(error_message)
+        return JobDetails(**job_details)
 
 class EnumUtils:
     @staticmethod

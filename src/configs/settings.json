@@ -3,7 +3,11 @@
         "input_path": "resumes/original/",
         "output_path": "resumes/parsed/",
         "supported_formats": [".docx"],
-        "file_name": "Daria_Doroshchuk_MS_SDET"
+        "file_name": "Daria_Doroshchuk_MS_SDET",
+        "path_to_positions_file": "configs/positions.json"
+    },
+    "job": {
+        "path_to_job_details_file": "configs/job_to_target.json"
     },
     "logging": {
         "level": "INFO"

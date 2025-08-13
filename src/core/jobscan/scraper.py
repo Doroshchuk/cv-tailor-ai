@@ -59,6 +59,6 @@ class JobscanScraper:
             page.goto(self.jobscan_settings.home_url)
             page.wait_for_url(self.jobscan_settings.home_url, timeout=10000)
             dashboard_page = DashboardPage(page, self.playwright_helper)
-            dashboard_page.scan(self.resume_path, str(self.job_details))
-            #page.pause()
+            match_report_page = dashboard_page.scan(self.resume_path, str(self.job_details))
+            page.pause()
             browser.close()

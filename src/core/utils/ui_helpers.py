@@ -46,3 +46,8 @@ class PlaywrightHelper:
         y = bounding_box["y"] + bounding_box["height"] / 2
         self.human_like_mouse_move_to_selector(page, x, y)
         self.delayed_hover_and_click(element)
+
+    def human_like_fill_data(self, page: Page, element: Locator, data: str):
+        self.human_like_mouse_move_and_click(page, element)
+        element.fill(data)
+        sleep(random.uniform(self.min_delay, self.max_delay))

@@ -22,6 +22,7 @@
     },
     "jobscan": {
         "home_url": "https://app.jobscan.co/dashboard",
+        "match_report_url_pattern": "https://app.jobscan.co/match-report/*",
         "storage_state_path": "src/auth/storage_state.json"
     },
     "playwright": {

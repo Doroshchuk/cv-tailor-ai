@@ -26,6 +26,7 @@ class ParsingSettings(BaseModel):
 
 class JobscanSettings(BaseModel):
     home_url: str
+    match_report_url_pattern: str
     storage_state_path: str
 
 class PlaywrightSettings(BaseModel):

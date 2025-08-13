@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 
 class JobDetails(BaseModel):
+    url: str
     title: str
     company: str
     description: str

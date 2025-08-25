@@ -53,4 +53,4 @@ class PlaywrightHelper:
         sleep(random.uniform(self.min_delay, self.max_delay))
 
     def exists(self, element: Locator) -> bool:
-        return element.count() > 0
+        return element.count() > 0 and element.is_enabled()

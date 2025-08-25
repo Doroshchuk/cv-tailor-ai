@@ -51,3 +51,6 @@ class PlaywrightHelper:
         self.human_like_mouse_move_and_click(page, element)
         element.fill(data)
         sleep(random.uniform(self.min_delay, self.max_delay))
+
+    def exists(self, element: Locator) -> bool:
+        return element.count() > 0

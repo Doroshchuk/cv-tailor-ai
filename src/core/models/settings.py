@@ -9,6 +9,8 @@ class ResumeSettings(BaseModel):
     supported_formats: List[str]
     file_name: str
     path_to_positions_file: str
+    whitelisted_hard_skills: List[str]
+    whitelisted_soft_skills: List[str]
 
 class JobDetails(BaseModel):
     path_to_job_details_file: str

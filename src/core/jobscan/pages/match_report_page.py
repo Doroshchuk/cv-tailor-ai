@@ -3,6 +3,8 @@ from playwright.sync_api import Page, Locator
 from core.models.job_to_target import JobDetails
 from core.utils.ui_helpers import PlaywrightHelper
 from core.jobscan.pages.jobscan_report_modal import JobscanReportModal
+from core.models.jobscan_match_report import JobscanMatchReport, Skill, SkillType, SkillApplianceType
+from core.models.settings import ResumeSettings
 
 
 class SearchabilityMetrics(str, Enum):
@@ -16,10 +18,12 @@ class SearchabilityMetrics(str, Enum):
     FILE_TYPE = "File Type"
 
 class MatchReportPage:
-    def __init__(self, page: Page, playwright_helper: PlaywrightHelper) -> None:
+    def __init__(self, page: Page, playwright_helper: PlaywrightHelper, resume_settings: ResumeSettings) -> None:
         self.page = page
         self.playwright_helper = playwright_helper
+        self.resume_settings = resume_settings
         self.jobscan_report_modal = JobscanReportModal(self.page, self.playwright_helper)
+        self.jobscan_match_report = JobscanMatchReport()
 
         self.title = self.page.locator("//div[normalize-space(.)='Resume scan results']")
         self.match_rate_title = self.page.get_by_role("heading", name="Match Rate")
@@ -29,6 +33,11 @@ class MatchReportPage:
         # Searchability
         self.searchability_metrics = self.page.locator("div#searchability + div.findingSection div.finding")
         # Hard Skills
+        self.hard_skills_container = self.page.locator("div#hardSkills + div.skillsAnalyzer")
+        self.hard_skills_name_columns = self.hard_skills_container.locator("span.name")
+        self.hard_skills_matching_count_columns = self.hard_skills_container.locator("span.count")
+        self.hard_skills_required_count_columns = self.hard_skills_matching_count_columns.locator("//parent::div/following-sibling::div[1]")
+        self.hard_skills_show_more_button = self.hard_skills_container.locator("//button[normalize-space(.)='Show more']")
         # Soft Skills
         # Recruiter tips
         # Formatting
@@ -40,6 +49,7 @@ class MatchReportPage:
         url_input = self.page.get_by_label("What is the url of the job listing?")
         update_details_button = self.page.locator("//button[normalize-space(.)='Update Details']")
 
+        #need to check after rescan - if the values are still missing/incorrect, then it would make sense to depend on the relevant properties from JobscanMatchReport
         if company_input.input_value() != job_details.company:
             self.playwright_helper.human_like_fill_data(self.page, company_input, job_details.company)
         if job_details.url and url_input.input_value() != job_details.url:
@@ -65,6 +75,7 @@ class MatchReportPage:
             case SearchabilityMetrics.CONTACT_INFORMATION | SearchabilityMetrics.SUMMARY | SearchabilityMetrics.SECTION_HEADINGS | SearchabilityMetrics.DATE_FORMATTING | SearchabilityMetrics.EDUCATION_MATCH | SearchabilityMetrics.FILE_TYPE:
                 raise NotImplementedError(error_message)
             case SearchabilityMetrics.JOB_TITLE_MATCH:
+                #need to check after rescan - if the value is still missing/incorrect, then it would make sense to depend on the relevant property from JobscanMatchReport
                 self.__fix_job_title_match(metric, job_details)
 
     def __check_match_rate_bar_for_issues_exist(self, match_rate_bar: Locator) -> bool:
@@ -74,16 +85,51 @@ class MatchReportPage:
             return True
         return False
 
-    def check_and_improve_searchability(self, job_details: JobDetails) -> None:
+    def process_match_report(self, job_details: JobDetails) -> JobscanMatchReport:
         self.title.wait_for(state="visible", timeout=2000)
         self.jobscan_report_modal.dismiss_if_present()
+        
+        self.check_and_improve_searchability(job_details)
+        jobscan_match_report = JobscanMatchReport(job_title=job_details.title, company=job_details.company, iteration=1, score=int(self.score.inner_text()), report_url=self.page.url)
+        hard_skills: list[Skill] = self.define_missing_hard_skills()
+        sorted_hard_skills: dict[SkillApplianceType, list[Skill]] = {
+            SkillApplianceType.APPLIED: [],
+            SkillApplianceType.MISSING: []
+        }
+        for skill in hard_skills:
+            sorted_hard_skills[skill.define_appliance_type()].append(skill)
+        jobscan_match_report.hard_skills = sorted_hard_skills
 
+    def check_and_improve_searchability(self, job_details: JobDetails) -> None:
         searchability_match_bar = self.match_rate_bars.all()[0]
-        self.__check_match_rate_bar_for_issues_exist(searchability_match_bar)
+        if self.__check_match_rate_bar_for_issues_exist(searchability_match_bar):
+            for metric in self.searchability_metrics.all():
+                name = metric.locator("div.title").inner_text()
+                icons = metric.locator("div.checkRow > div.checkIcon").all()
 
-        for metric in self.searchability_metrics.all():
-            name = metric.locator("div.title").inner_text()
-            icons = metric.locator("div.checkRow > div.checkIcon").all()
+                if any("fail" in icon.get_attribute("class") for icon in icons) :
+                    self.__fix_searchability_metrics(name, metric, job_details)
 
-            if any("fail" in icon.get_attribute("class") for icon in icons) :
-                self.__fix_searchability_metrics(name, metric, job_details)
+    def define_missing_hard_skills(self) -> list[Skill]:
+        hard_skills_match_bar = self.match_rate_bars.all()[1]
+        if self.__check_match_rate_bar_for_issues_exist(hard_skills_match_bar):
+
+            if self.playwright_helper.exists(self.hard_skills_show_more_button):
+                self.playwright_helper.human_like_mouse_move_and_click(self.page, self.hard_skills_show_more_button)
+            
+            hard_skills: List[Skill] = []
+            skill_name_colum_texts = self.hard_skills_name_columns.all_inner_texts()
+            skill_matching_count_colum_texts = self.hard_skills_matching_count_columns.all_inner_texts()
+            skill_required_column_column_texts = self.hard_skills_required_count_columns.all_inner_texts()
+            for i in range(len(skill_name_colum_texts)):
+                skill_name = skill_name_colum_texts[i]
+                #fix error: handle X
+                skill_matching_count = 0
+                if not self.playwright_helper.exists(self.hard_skills_matching_count_columns.all()[i].locator("span.x")):
+                    skill_matching_count = int(skill_matching_count_colum_texts[i])
+                skill_required_count = int(skill_required_column_column_texts[i].split()[0])
+                is_supported = skill_name.lower() in (skill.lower() for skill in self.resume_settings.whitelisted_hard_skills)
+                skill = Skill(name=skill_name, type=SkillType.HARD_SKILL, required_quantity=skill_required_count, actual_quantity=skill_matching_count, is_supported=is_supported)
+                hard_skills.append(skill)
+
+            return hard_skills

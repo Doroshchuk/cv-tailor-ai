@@ -13,6 +13,7 @@ class JobscanScraper:
         self.jobscan_settings = jobscan_settings
         self.playwright_settings = playwright_settings
         self.job_details = job_details
+        self.resume_settings = resume_settings
         self.playwright_helper = PlaywrightHelper(self.playwright_settings)
         script_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
@@ -43,7 +44,7 @@ class JobscanScraper:
 
     def run_resume_scan_workflow(self) -> None:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=False, slow_mo = 500)
+            browser = playwright.chromium.launch(headless=False)
             context = browser.new_context(
                 storage_state=self.jobscan_settings.storage_state_path,
                 user_agent=JobscanScraper.get_cached_user_agent(playwright, self.playwright_settings.user_agent_cache_path, self.playwright_settings.user_agent_cache_max_age_days),
@@ -58,7 +59,7 @@ class JobscanScraper:
             page = context.new_page()
             page.goto(self.jobscan_settings.home_url)
             page.wait_for_url(self.jobscan_settings.home_url, timeout=10000)
-            dashboard_page = DashboardPage(page, self.playwright_helper, self.jobscan_settings)
+            dashboard_page = DashboardPage(page, self.playwright_helper, self.jobscan_settings, self.resume_settings)
             match_report_page = dashboard_page.scan(self.resume_path, str(self.job_details))
-            match_report_page.check_and_improve_searchability(self.job_details)
+            match_report_page.process_match_report(self.job_details)
             browser.close()

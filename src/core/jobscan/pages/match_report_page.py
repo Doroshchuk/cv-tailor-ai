@@ -3,7 +3,7 @@ from playwright.sync_api import Page, Locator
 from core.models.job_to_target import JobDetails
 from core.utils.ui_helpers import PlaywrightHelper
 from core.jobscan.pages.jobscan_report_modal import JobscanReportModal
-from core.models.jobscan_match_report import JobscanMatchReport, Skill, SkillType, SkillApplianceType
+from core.models.jobscan_match_report import Check, CheckStatusType, JobscanMatchReport, MetricFinding, Skill, SkillType, SkillApplianceType
 from core.models.settings import ResumeSettings
 from core.jobscan.pages.components.skills_analyzer_component import SkillsAnalyzerComponent
 
@@ -38,7 +38,11 @@ class MatchReportPage:
         # Soft Skills
         self.soft_skills_container = self.page.locator("div#softSkills + div.skillsAnalyzer")
         # Recruiter tips
+        self.recruiter_tips_container = self.page.locator("div#recruiterTips")
+        self.recruiter_tips_metrics = self.page.locator("div#recruiterTips + div.findingSection div.finding")
         # Formatting
+        self.formatting_container = self.page.locator("div#formatting")
+        self.formatting_metrics = self.page.locator("div#formatting + div.findingSection div.finding")
 
     def __fix_ats_tips(self, metric: Locator, job_details: JobDetails) -> None:
         self.playwright_helper.human_like_mouse_move_and_click(self.page, metric.locator("div.checkWrapper span:has-text('Update')"))
@@ -105,6 +109,8 @@ class MatchReportPage:
             sorted_soft_skills[skill.define_appliance_type()].append(skill)
         jobscan_match_report.hard_skills = sorted_hard_skills
         jobscan_match_report.soft_skills = sorted_soft_skills
+        jobscan_match_report.metrics.update(self._check_and_process_metric(3, self.recruiter_tips_container, self.recruiter_tips_metrics))
+        jobscan_match_report.metrics.update(self._check_and_process_metric(4, self.formatting_container, self.formatting_metrics))
 
     def _check_and_improve_searchability(self, job_details: JobDetails) -> None:
         searchability_match_bar = self.match_rate_bars.nth(0)
@@ -123,4 +129,38 @@ class MatchReportPage:
                 skills_analyzer_component = SkillsAnalyzerComponent(self.page, self.playwright_helper, container, skill_type)
                 return skills_analyzer_component.process_skills(whitelisted_skills)
         return []
-                
+
+    def _check_and_process_metric(self, match_bar_index: int, container: Locator, findings: Locator) -> dict[str, list[MetricFinding]]:
+        match_bar = self.match_rate_bars.nth(match_bar_index)
+        if self.__check_match_rate_bar_for_issues_exist(match_bar):
+            metric_title = container.locator("h3").inner_text().split("\n")[0]
+            return { metric_title: self._collect_metric_findings(findings) }
+
+    def _collect_metric_findings(self, findings: Locator) -> list[MetricFinding]:
+        metric_findings: list[MetricFinding] = []
+        for finding in findings.all():
+            title = finding.locator("div.title").inner_text()
+            checks = finding.locator("div.checkRow").all()
+            metric_finding = MetricFinding(title=title)
+            is_finding_fully_applied = True
+            finding_checks: list[Check] = []
+
+            for check in checks:
+                description = check.locator("div.description").inner_text()
+                status = CheckStatusType(check.locator("div.checkIcon").get_attribute("class").split()[-1])
+                if is_finding_fully_applied and (status == CheckStatusType.FAIL or status == CheckStatusType.WARN):
+                    is_finding_fully_applied = False
+                evidence_button = check.locator("div.evidence")
+                details: list[str] = []
+                if self.playwright_helper.exists(evidence_button):
+                    self.playwright_helper.human_like_mouse_move_and_click(self.page, evidence_button)
+                    modal = self.page.locator("div#modal")
+                    details.extend(line.strip() for line in modal.inner_text().splitlines() if line)
+                    self.playwright_helper.human_like_mouse_move_and_click(self.page, modal.locator("//div[@data-test='dismissableCloseIcon']"))
+                finding_checks.append(Check(description=description, details=details, status=status))
+
+            metric_finding.is_fully_applied = is_finding_fully_applied
+            metric_finding.checks = finding_checks
+            metric_findings.append(metric_finding)
+
+        return metric_findings

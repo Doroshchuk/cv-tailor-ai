@@ -8,9 +8,17 @@ class SkillApplianceType(str, Enum):
     MISSING = "missing"
     APPLIED = "applied"
 
+
 class SkillType(str, Enum):
     SOFT_SKILL = "soft skill"
     HARD_SKILL = "hard skill"
+
+
+class CheckStatusType(str, Enum):
+    WARN = "warn"
+    PASS = "pass"
+    FAIL = "fail"
+
 
 class Skill(BaseModel):
     name: Optional[str] = None
@@ -25,6 +33,25 @@ class Skill(BaseModel):
     class Config:
         validate_assignment = True  # validate on assignment
 
+
+class Check(BaseModel):
+    description: Optional[str] = None
+    details: List[str] = []
+    status: Optional[CheckStatusType] = None
+
+    class Config:
+        validate_assignment = True  # validate on assignment
+
+
+class MetricFinding(BaseModel):
+    title: Optional[str] = None
+    is_fully_applied: Optional[bool] = None
+    checks: List[Check] = []
+
+    class Config:
+        validate_assignment = True  # validate on assignment
+        
+
 class JobscanMatchReport(BaseModel):
     job_title: Optional[str] = None
     company: Optional[str] = None
@@ -35,6 +62,7 @@ class JobscanMatchReport(BaseModel):
     is_job_title_match_by_default: Optional[bool] = None
     hard_skills: Dict[SkillApplianceType, List[Skill]] = {}
     soft_skills: Dict[SkillApplianceType, List[Skill]] = {}
+    metrics: Dict[str,List[MetricFinding]] = {}
 
     class Config:
         validate_assignment = True  # validate on assignment

@@ -1,7 +1,10 @@
+import json
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 from enum import Enum
 from datetime import datetime, timezone
+import core.utils.paths as path_utils
+from pathlib import Path
 
 
 class SkillApplianceType(str, Enum):
@@ -31,7 +34,7 @@ class Skill(BaseModel):
         return SkillApplianceType.APPLIED if self.actual_quantity >= self.required_quantity else SkillApplianceType.MISSING
     
     class Config:
-        validate_assignment = True  # validate on assignment
+        model_config = {"validate_assignment": True}  # validate on assignment
 
 
 class Check(BaseModel):
@@ -40,7 +43,7 @@ class Check(BaseModel):
     status: Optional[CheckStatusType] = None
 
     class Config:
-        validate_assignment = True  # validate on assignment
+        model_config = {"validate_assignment": True}  # validate on assignment
 
 
 class MetricFinding(BaseModel):
@@ -49,7 +52,7 @@ class MetricFinding(BaseModel):
     checks: List[Check] = []
 
     class Config:
-        validate_assignment = True  # validate on assignment
+        model_config = {"validate_assignment": True}  # validate on assignment
         
 
 class JobscanMatchReport(BaseModel):
@@ -60,9 +63,17 @@ class JobscanMatchReport(BaseModel):
     report_url: Optional[str] = None
     scanned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_job_title_match_by_default: Optional[bool] = None
-    hard_skills: Dict[SkillApplianceType, List[Skill]] = {}
-    soft_skills: Dict[SkillApplianceType, List[Skill]] = {}
-    metrics: Dict[str,List[MetricFinding]] = {}
+    hard_skills: Dict[SkillApplianceType, List[Skill]] = Field(default_factory=dict)
+    soft_skills: Dict[SkillApplianceType, List[Skill]] = Field(default_factory=dict)
+    metrics: Dict[str,List[MetricFinding]] = Field(default_factory=dict)
 
     class Config:
-        validate_assignment = True  # validate on assignment
+        model_config = {"validate_assignment": True}  # validate on assignment
+
+    def write_to_file(self) -> None:
+        path_to_match_reports_dir = Path(path_utils.get_configs_dir()) / f"{self.company}_{self.job_title}"
+
+        path_to_match_reports_dir.mkdir(parents=True, exist_ok=True)
+        file_path = path_to_match_reports_dir / f"match_report_{self.iteration}.json"
+        with open(file_path, "w+") as f:
+            json.dump(self.model_dump(mode="json"), f)

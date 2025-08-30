@@ -215,3 +215,6 @@ src/auth/user_agent.json
 
 # Job details
 src/configs/job_to_target.json
+
+# Ignore any match_report*.json in any subdirectory of src/configs
+src/configs/*/match_report*.json

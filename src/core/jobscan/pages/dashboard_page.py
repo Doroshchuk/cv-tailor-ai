@@ -2,6 +2,7 @@ from playwright.sync_api import Page, expect
 from core.utils.ui_helpers import PlaywrightHelper
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.models.settings import JobscanSettings, ResumeSettings
+from core.models.job_to_target import JobDetails
 
 
 class DashboardPage:
@@ -23,10 +24,10 @@ class DashboardPage:
             self.playwright_helper.delayed_hover_and_click(self.resume_drag_and_drop_button)
             fch.value.set_files(path_to_resume)
 
-    def scan(self, path_to_resume: str, job_description: str) -> MatchReportPage:
+    def scan(self, path_to_resume: str, job_details: JobDetails) -> MatchReportPage:
         self.upload_resume(path_to_resume)
-        self.playwright_helper.human_like_fill_data(self.page, self.job_description_text_area, job_description)
+        self.playwright_helper.human_like_fill_data(self.page, self.job_description_text_area,  str(job_details))
         expect(self.scan_button).to_be_enabled(timeout=2000)
         self.playwright_helper.human_like_mouse_move_and_click(self.page, self.scan_button)
-        self.page.wait_for_url(self.jobscan_settings.match_report_url_pattern, timeout=13000)
-        return MatchReportPage(self.page, self.playwright_helper, self.resume_settings)
+        self.page.wait_for_url(self.jobscan_settings.match_report_url_pattern, timeout=15000)
+        return MatchReportPage(self.page, self.playwright_helper, self.resume_settings, job_details)

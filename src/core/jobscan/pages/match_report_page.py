@@ -6,6 +6,7 @@ from core.jobscan.pages.jobscan_report_modal import JobscanReportModal
 from core.models.jobscan_match_report import Check, CheckStatusType, JobscanMatchReport, MetricFinding, Skill, SkillType, SkillApplianceType
 from core.models.settings import ResumeSettings
 from core.jobscan.pages.components.skills_analyzer_component import SkillsAnalyzerComponent
+import re
 
 
 class SearchabilityMetrics(str, Enum):
@@ -46,9 +47,12 @@ class MatchReportPage:
         self.formatting_container = self.page.locator("div#formatting")
         self.formatting_metrics = self.page.locator("div#formatting + div.findingSection div.finding")
 
-    def _check_match_rate_bar_for_issues_exist(self, match_rate_bar: Locator) -> bool:
-        issues_text = match_rate_bar.locator("div.title > span.text-primary")
-        if int(issues_text.inner_text().split(" ")[0]) > 0:
+    def _check_match_rate_bar_for_issues_exist(self, metric_name: str) -> bool:
+        title = self.page.locator(f"//div[@class='match-rate-bar']//span[text()='{metric_name}']")
+        issues_text = title.locator("//following-sibling::span")
+        
+        issues_count_match = re.match(r"\d+", issues_text.inner_text())
+        if issues_count_match and int(issues_count_match.group()) > 0:
             self.playwright_helper.human_like_mouse_move_and_click(self.page, issues_text)
             return True
         return False
@@ -58,9 +62,9 @@ class MatchReportPage:
         self.jobscan_report_modal.dismiss_if_present()
         
         jobscan_match_report = JobscanMatchReport(job_title=self.job_details.title, company=self.job_details.company, iteration=1, score=int(self.score.inner_text()), report_url=self.page.url)
-        jobscan_match_report.metrics.update(self._check_and_process_metric(0, self.searchability_container, self.searchability_metrics))
-        hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, 1, self.resume_settings.whitelisted_hard_skills)
-        soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, 2, self.resume_settings.whitelisted_soft_skills)
+        jobscan_match_report.metrics.update(self._check_and_process_metric("Searchability", self.searchability_container, self.searchability_metrics))
+        hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, "Hard Skills", self.resume_settings.whitelisted_hard_skills)
+        soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, "Soft Skills", self.resume_settings.whitelisted_soft_skills)
         sorted_hard_skills: dict[SkillApplianceType, list[Skill]] = {
             SkillApplianceType.APPLIED: [],
             SkillApplianceType.MISSING: []
@@ -75,32 +79,19 @@ class MatchReportPage:
             sorted_soft_skills[skill.define_appliance_type()].append(skill)
         jobscan_match_report.hard_skills = sorted_hard_skills
         jobscan_match_report.soft_skills = sorted_soft_skills
-        jobscan_match_report.metrics.update(self._check_and_process_metric(3, self.recruiter_tips_container, self.recruiter_tips_metrics))
-        jobscan_match_report.metrics.update(self._check_and_process_metric(4, self.formatting_container, self.formatting_metrics))
+        jobscan_match_report.metrics.update(self._check_and_process_metric("Recruiter Tips", self.recruiter_tips_container, self.recruiter_tips_metrics))
+        jobscan_match_report.metrics.update(self._check_and_process_metric("Formatting", self.formatting_container, self.formatting_metrics))
         return jobscan_match_report
 
-    def _check_and_improve_searchability(self, job_details: JobDetails) -> None:
-        searchability_match_bar = self.match_rate_bars.nth(0)
-        if self._check_match_rate_bar_for_issues_exist(searchability_match_bar):
-            for metric in self.searchability_metrics.all():
-                name = metric.locator("div.title").inner_text()
-                icons = metric.locator("div.checkRow > div.checkIcon").all()
-
-                if any("fail" in icon.get_attribute("class") for icon in icons) :
-                    self._fix_searchability_metrics(name, metric, job_details)
-
-    def _process_skills(self, skill_type: SkillType, skills_match_bar_index: int, whitelisted_skills: list[str]) -> list[Skill]:
-        skills_match_bar = self.match_rate_bars.nth(skills_match_bar_index)
-        if self._check_match_rate_bar_for_issues_exist(skills_match_bar):
+    def _process_skills(self, skill_type: SkillType, metric_name: str, whitelisted_skills: list[str]) -> list[Skill]:
+        if self._check_match_rate_bar_for_issues_exist(metric_name):
                 container = self.hard_skills_container if skill_type == SkillType.HARD_SKILL else self.soft_skills_container
                 skills_analyzer_component = SkillsAnalyzerComponent(self.page, self.playwright_helper, container, skill_type)
                 return skills_analyzer_component.process_skills(whitelisted_skills)
         return []
 
-    def _check_and_process_metric(self, match_bar_index: int, container: Locator, findings: Locator) -> dict[str, list[MetricFinding]]:
-        #to rework to depend on title
-        match_bar = self.match_rate_bars.nth(match_bar_index)
-        if self._check_match_rate_bar_for_issues_exist(match_bar):
+    def _check_and_process_metric(self, metric_name: str, container: Locator, findings: Locator) -> dict[str, list[MetricFinding]]:
+        if self._check_match_rate_bar_for_issues_exist(metric_name):
             metric_title = container.locator("h3").inner_text().split("\n")[0]
             return { metric_title: self._collect_metric_findings(findings) }
 

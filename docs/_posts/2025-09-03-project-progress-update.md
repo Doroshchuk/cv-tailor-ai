@@ -4,8 +4,8 @@ title: "Project Update — Comprehensive Metric Analysis & Error Handling"
 ---
 
 ✅ Learning Progress
-1. Completed the Software Design section of the ProgrammingExpert course.
-2. Preparing to review the Software Engineering Tools section.
+- Completed the Software Design section of the ProgrammingExpert course.
+- Preparing to review the Software Engineering Tools section.
 
 💻 Project Progress
 🔹 Comprehensive Metric Analysis with Evidence Collection

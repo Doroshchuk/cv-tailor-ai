@@ -6,11 +6,11 @@ title: "Project Update — Jobscan Resume Workflow & Advanced Python"
 Since my last update, I’ve made progress both on the learning side and the automation project itself.
 
 📚 Learning Progress
-✅ Finished the Advanced Programming section of the ProgrammingExpert course.
-⏳ Still need to complete the Assessment before moving on to Software Design.
+- ✅ Finished the Advanced Programming section of the ProgrammingExpert course.
+- ⏳ Still need to complete the Assessment before moving on to Software Design.
 
 💻 Project Updates
-Committed several improvements to the Jobscan automation workflow:
+- Committed several improvements to the Jobscan automation workflow:
 
 🔧 Fixes
 - Corrected datetime comparison logic for user_agent regeneration.

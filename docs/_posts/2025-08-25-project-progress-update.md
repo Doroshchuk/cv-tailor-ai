@@ -4,8 +4,8 @@ title: "Project Update — Skills Analysis & Match Report Automation"
 ---
 
 ✅ Learning Progress
-Completed the ProgrammingExpert Advanced Assessment 🎉.
-Ready to move on to the Software Design section.
+- Completed the ProgrammingExpert Advanced Assessment 🎉.
+- Ready to move on to the Software Design section.
 
 💻 Project Progress
 🔹 Added comprehensive skill analysis and match report generation

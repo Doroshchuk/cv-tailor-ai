@@ -71,12 +71,9 @@ class JobscanMatchReport(BaseModel):
         model_config = {"validate_assignment": True}  # validate on assignment
 
     def write_to_file(self) -> None:
-        # path_to_match_reports_dir = Path(path_utils.get_configs_dir_path()) / f"{self.company}_{self.job_title}"
         path_to_match_report_path = path_utils.get_jobscan_match_report_path(self.company, self.job_title, self.iteration)
-
-        # path_to_match_reports_dir.mkdir(parents=True, exist_ok=True)
         path_to_match_report_path.parent.mkdir(parents=True, exist_ok=True)
-        # file_path = path_to_match_reports_dir / f"match_report_{self.iteration}.json"
+        
         with path_to_match_report_path.open("w+") as f:
             json.dump(self.model_dump(mode="json"), f)
 

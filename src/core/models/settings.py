@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from ..utils.log_helper import LogLevelEnum
+from core.utils.log_helper import LogLevelEnum
 
 
 class ResumeSettings(BaseModel):
@@ -8,12 +8,12 @@ class ResumeSettings(BaseModel):
     output_path: str
     supported_formats: List[str]
     file_name: str
-    path_to_positions_file: str
+    positions_file: str
     whitelisted_hard_skills: List[str]
     whitelisted_soft_skills: List[str]
 
 class JobDetails(BaseModel):
-    path_to_job_details_file: str
+    job_details_file: str
 
 class LoggingSettings(BaseModel):
     level: LogLevelEnum

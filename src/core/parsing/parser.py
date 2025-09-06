@@ -1,11 +1,12 @@
 from docx import Document
-from .enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
-import os
+from core.parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 import re
-from ..utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
-from ..utils.log_helper import LogHelper
-from ..utils.config_manager import ConfigManager
-
+from core.utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
+from core.utils.log_helper import LogHelper
+from core.services.config_manager import ConfigManager
+from core.models.resume import Degree, Resume, Header, ProfessionalSummary, ProfessionalExperience, Education 
+from pathlib import Path
+import core.utils.paths as path_utils
 
 class ResumeParser:
     HEADER_REQUIRED_FIELDS = [HeaderFields.NAME, HeaderFields.LOCATION, HeaderFields.PHONE, HeaderFields.EMAIL, HeaderFields.WORK_AUTHORIZED]
@@ -13,26 +14,26 @@ class ResumeParser:
     PROFESSIONAL_EXPERIENCE_POSITION_PATTERN = r"({})\s+(\d{{2}}/\d{{4}}.*?)\n"
 
     # TODO: add support for other file formats (pdf, txt, etc.)
-    def __init__(self, resume_path: str):
+    def __init__(self, resume_path: Path):
         self.config = ConfigManager()
         self.logger = LogHelper("resume_parser")
         self.logger.info(f"Initializing parser for: {resume_path}")
-        self.resume_path = resume_path
+        self.resume_path = Path(resume_path)
 
-        if not os.path.exists(resume_path):
-            error_message = f"Resume file not found: {resume_path}"
+        if not self.resume_path.exists():
+            error_message = f"Resume file not found: {self.resume_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-        if not resume_path.endswith('.docx'):
-            error_message = f"Unsupported file format. Expected '.docx' got {resume_path}"
+        if self.resume_path.suffix.lower() != ".docx":
+            error_message = f"Unsupported file format. Expected '.docx', got {self.resume_path.suffix}"
             self.logger.error(error_message)
             raise ValueError(error_message)
 
-    def parse_resume(self) -> str:
+    def parse_resume_text(self) -> str:
         try:
             self.logger.info("Starting to parse resume")
-            doc = Document(self.resume_path)
+            doc = Document(str(self.resume_path))
             text = ""
             for paragraph in doc.paragraphs:
                 if paragraph.text.strip():
@@ -43,10 +44,10 @@ class ResumeParser:
             self.logger.error(f"Error parsing resume: {e}")
             return ""
     
-    def parse_resume_sections(self) -> dict[ResumeSectionType, list[str]]:
+    def _parse_resume_sections(self) -> dict[ResumeSectionType, list[str]]:
         try:
             self.logger.info("Starting to separate resume sections")
-            doc = Document(self.resume_path)
+            doc = Document(str(self.resume_path))
             sections = {}
             current_section = ResumeSectionType.HEADER
             sections[current_section] = []
@@ -68,80 +69,87 @@ class ResumeParser:
             self.logger.error(f"Error parsing resume sections: {e}")
             return {}
 
-    def parse_resume_header(self, header_text: list[str]) -> dict[str, str]:
+    def parse(self) -> Resume:
+        sections = self._parse_resume_sections()
+        return Resume(
+            header = self._parse_resume_header(sections[ResumeSectionType.HEADER]),
+            professional_summary = self._parse_resume_professional_summary(sections[ResumeSectionType.PROFESSIONAL_SUMMARY]),
+            technical_skills = self._parse_resume_technical_skills(sections[ResumeSectionType.TECHNICAL_SKILLS]),
+            professional_experience_list = self._parse_resume_professional_experience(sections[ResumeSectionType.PROFESSIONAL_EXPERIENCE]),
+            education = self._parse_resume_education(sections[ResumeSectionType.EDUCATION]),
+            professional_development_list = self._parse_resume_professional_development(sections[ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS])
+        )
+
+    def _parse_resume_header(self, header_text: list[str]) -> Header:
         if not header_text or len(header_text) < self.config.settings.parsing.min_header_lines:
-            self.logger.warning(f"HEADER section has insufficient data {header_text}")
+            self.logger.warning(f"{ResumeSectionType.HEADER.value} section has insufficient data {header_text}")
             return {}
 
-        parsed_header = {}
+        header = Header()
         try :
-            parsed_header[HeaderFields.NAME] = header_text[0]
-            parsed_header[HeaderFields.LOCATION] = header_text[1]
+            header.name = header_text[0]
+            header.location = header_text[1]
             contact_info = header_text[2]
             if self.config.settings.parsing.header_contact_separator in contact_info:
                 contact_info_parts = TextUtils.safe_split(contact_info,  self.config.settings.parsing.header_contact_separator)
-                parsed_header[HeaderFields.PHONE] = TextUtils.safe_get_and_strip(contact_info_parts, 0)
-                parsed_header[HeaderFields.EMAIL] = TextUtils.safe_get_and_strip(contact_info_parts, 1)
+                header.phone = TextUtils.safe_get_and_strip(contact_info_parts, 0)
+                header.email = TextUtils.safe_get_and_strip(contact_info_parts, 1)
+                header.linkedin = TextUtils.safe_get_and_strip(contact_info_parts, 2)
+                header.github = TextUtils.safe_get_and_strip(contact_info_parts, 3)
             else:
-                parsed_header[HeaderFields.PHONE] = contact_info.strip()
-                parsed_header[HeaderFields.EMAIL] = None
-            # parse LinkedIn, GitHub links
-            parsed_header[HeaderFields.WORK_AUTHORIZED] = header_text[3]
-            
-            if not ValidationUtils.validate_required_fields(parsed_header, self.HEADER_REQUIRED_FIELDS, ResumeSectionType.HEADER):
-                return {}
+                header.phone = contact_info.strip()
+                header.email = None
+                header.linkedin = None
+                header.github = None
+            header.work_authorized = header_text[3]
 
-            self.logger.info("Successfully parsed HEADER section")
-            return parsed_header
+            self.logger.info(f"Successfully parsed {ResumeSectionType.HEADER.value} section")
+            return header
         except IndexError as e:
-            self.logger.error(f"Error parsing HEADER: {e}")
+            self.logger.error(f"Error parsing {ResumeSectionType.HEADER.value}: {e}")
             return {}
 
-    def parse_resume_professional_summary(self, professional_summary_text: list[str]) -> dict[str, str]:
+    def _parse_resume_professional_summary(self, professional_summary_text: list[str]) -> ProfessionalSummary:
         if ValidationUtils.check_if_section_empty(professional_summary_text, ResumeSectionType.PROFESSIONAL_SUMMARY):
             return {}
         
-        parsed_professional_summary = {}
+        professional_summary = ProfessionalSummary()
         try:
-            parsed_professional_summary[ProfessionalSummaryFields.SUMMARY] = TextUtils.safe_get_and_strip(professional_summary_text, 0)
-            parsed_professional_summary[ProfessionalSummaryFields.HIGHLIGHTS] = professional_summary_text[1:]
+            professional_summary.summary = TextUtils.safe_get_and_strip(professional_summary_text, 0)
+            professional_summary.highlights = professional_summary_text[1:]
 
-            if not ValidationUtils.validate_required_fields(parsed_professional_summary, self.PROFESSIONAL_SUMMARY_REQUIRED_FIELDS, ResumeSectionType.PROFESSIONAL_SUMMARY):
-                return {}
-
-            self.logger.info("Successfully parsed PROFESSIONAL SUMMARY section")
-            return parsed_professional_summary
+            self.logger.info(f"Successfully parsed {ResumeSectionType.PROFESSIONAL_SUMMARY.value} section")
+            return professional_summary
         except IndexError as e:
-            self.logger.error(f"Error parsing PROFESSIONAL SUMMARY: {e}")
+            self.logger.error(f"Error parsing {ResumeSectionType.PROFESSIONAL_SUMMARY.value}: {e}")
             return {}
     
-    def parse_resume_technical_skills(self, technical_skills_text: list[str]) -> dict[str, str]:
+    def _parse_resume_technical_skills(self, technical_skills_text: list[str]) -> list[str]:
         if ValidationUtils.check_if_section_empty(technical_skills_text, ResumeSectionType.TECHNICAL_SKILLS):
             return {}
 
-        parsed_technical_skills = {}
-        parsed_technical_skills[TechnicalSkillsFields.SKILLS] = TextUtils.clean_text_list(technical_skills_text)
-        self.logger.info("Successfully parsed TECHNICAL SKILLS section")
-        return parsed_technical_skills
+        technical_skills: list[str] = []
+        technical_skills.extend(TextUtils.clean_text_list(technical_skills_text))
+        self.logger.info(f"Successfully parsed {ResumeSectionType.TECHNICAL_SKILLS.value} section")
+        return technical_skills
 
-    def parse_resume_professional_experience(self, experience_list: list[str]) -> list[dict]:
+    def _parse_resume_professional_experience(self, experience_list: list[str]) -> list[ProfessionalExperience]:
         if ValidationUtils.check_if_section_empty(experience_list, ResumeSectionType.PROFESSIONAL_EXPERIENCE):
             return []
         
         experience_text = "\n".join(experience_list)
-        positions = PositionUtils.get_supported_positions(self.config.settings.resume.path_to_positions_file)
-        parsed_experience = []
+        positions = PositionUtils.get_supported_positions(path_utils.get_positions_file_path())
+        professional_experience_list: list[ProfessionalExperience] = []
 
         # Regex to find each position and its start line
         position_pattern =  re.compile(self.PROFESSIONAL_EXPERIENCE_POSITION_PATTERN.format('|'.join(map(re.escape, positions))))
         matches = list(position_pattern.finditer(experience_text))
         for i, match in enumerate(matches):
-            experience = self._parse_position_details(i, match, matches, experience_text)
-            parsed_experience.append(experience)
-        self.logger.info("Successfully parsed PROFESSIONAL EXPERIENCE section")
-        return parsed_experience
+            professional_experience_list.append(self._parse_position_details(i, match, matches, experience_text))
+        self.logger.info(f"Successfully parsed {ResumeSectionType.PROFESSIONAL_EXPERIENCE.value} section")
+        return professional_experience_list
 
-    def _parse_position_details(self, index: int, match: re.Match, matches: list[re.Match], experience_text: str) -> dict:
+    def _parse_position_details(self, index: int, match: re.Match, matches: list[re.Match], experience_text: str) -> ProfessionalExperience:
         position = match.group(1).strip()
         dates = match.group(2).strip()
 
@@ -170,78 +178,56 @@ class ResumeParser:
         # Clean and collect bullets
         bullets = TextUtils.clean_text_list(bullet_lines)
 
-        experience = {
-            ProfessionalExperienceFields.POSITION: position,
-            ProfessionalExperienceFields.DATES: dates,
-            ProfessionalExperienceFields.COMPANY: company,
-            ProfessionalExperienceFields.LOCATION: location,
-            ProfessionalExperienceFields.COMPANY_DESCRIPTION: company_description,
-            ProfessionalExperienceFields.PROJECT_DESCRIPTION: project_description,
-            ProfessionalExperienceFields.BULLETS: bullets
-        }
+        experience = ProfessionalExperience(
+            position=position,
+            dates=dates,
+            company=company,
+            location=location,
+            company_description=company_description,
+            project_description=project_description,
+            bullets=bullets
+        )
         return experience
 
-    def parse_resume_education(self, education_text: list[str]) -> dict[str, str]:
+    def _parse_resume_education(self, education_text: list[str]) -> Education:
         if ValidationUtils.check_if_section_empty(education_text, ResumeSectionType.EDUCATION):
             return {}
 
-        parsed_education = {}
+        education = Education()
         try:
             university_line = education_text[0]
             if self.config.settings.parsing.education_university_country_separator in university_line:
                 parts = TextUtils.safe_split(university_line, self.config.settings.parsing.education_university_country_separator)
-                parsed_education[EducationFields.UNIVERSITY] = TextUtils.safe_get_and_strip(parts, 0)
-                parsed_education[EducationFields.COUNTRY] = TextUtils.safe_get_and_strip(parts, 1)
+                education.university = TextUtils.safe_get_and_strip(parts, 0)
+                education.country = TextUtils.safe_get_and_strip(parts, 1)
             else:
-                parsed_education[EducationFields.UNIVERSITY] = university_line.strip()
-                parsed_education[EducationFields.COUNTRY] = ""
+                education.university = university_line.strip()
+                education.country = ""
                 
-            degrees = []
+            degree_list: list[Degree] = []
             for raw in education_text[1:]:
-                degree = {}
+                degree = Degree()
                 raw_parts = TextUtils.safe_split(raw, self.config.settings.parsing.education_degree_separator)
                 if len(raw_parts) == 3:
-                    degree[EducationFields.DEGREE] = TextUtils.safe_get_and_strip(raw_parts, 0)
-                    degree[EducationFields.FIELD_OF_STUDY] = TextUtils.safe_get_and_strip(raw_parts, 1)
-                    degree[EducationFields.YEAR_OF_GRADUATION] = TextUtils.safe_get_and_strip(raw_parts, 2)
+                    degree.degree = TextUtils.safe_get_and_strip(raw_parts, 0)
+                    degree.field_of_study = TextUtils.safe_get_and_strip(raw_parts, 1)
+                    degree.year_of_graduation = TextUtils.safe_get_and_strip(raw_parts, 2)
                 else:
-                    degree[EducationFields.DEGREE] = raw.strip()
-                    degree[EducationFields.FIELD_OF_STUDY] = ""
-                    degree[EducationFields.YEAR_OF_GRADUATION] = ""
-                degrees.append(degree)
-            parsed_education[EducationFields.DEGREE] = degrees
-            self.logger.info("Successfully parsed EDUCATION section")
-            return parsed_education
+                    degree.degree = raw.strip()
+                    degree.field_of_study = ""
+                    degree.year_of_graduation = ""
+                degree_list.append(degree)
+            education.degree_list = degree_list
+            self.logger.info(f"Successfully parsed {ResumeSectionType.EDUCATION.value} section")
+            return education
         except IndexError as e:
-            self.logger.error(f"Error parsing EDUCATION: {e}")
+            self.logger.error(f"Error parsing {ResumeSectionType.EDUCATION.value}: {e}")
             return {}
     
-    def parse_resume_professional_development(self, professional_development_text: list[str]) -> dict[str, str]:
+    def _parse_resume_professional_development(self, professional_development_text: list[str]) -> list[str]:
         if ValidationUtils.check_if_section_empty(professional_development_text, ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS):
             return {}
         
-        parsed_professional_development = {}
-        parsed_professional_development[ProfessionalDevelopmentFields.PROJECTS_OR_CERTIFICATIONS] = TextUtils.clean_text_list(professional_development_text)
-        self.logger.info("Successfully parsed PROJECTS OR CERTIFICATIONS section")
-        return parsed_professional_development
-
-    def parse_detailed_sections(self, sections: dict[ResumeSectionType, list[str]]) -> dict:
-        parsed_sections = {}
-        self.logger.info("Starting to parse resume by detailed sections")
-        for section_type, section_text in sections.items():
-            if section_type == ResumeSectionType.HEADER:
-                parsed_sections[section_type] = self.parse_resume_header(section_text)
-            elif section_type == ResumeSectionType.PROFESSIONAL_SUMMARY:
-                parsed_sections[section_type] = self.parse_resume_professional_summary(section_text)
-            elif section_type == ResumeSectionType.TECHNICAL_SKILLS:
-                parsed_sections[section_type] = self.parse_resume_technical_skills(section_text)
-            elif section_type == ResumeSectionType.PROFESSIONAL_EXPERIENCE:
-                parsed_sections[section_type] = self.parse_resume_professional_experience(section_text)
-            elif section_type == ResumeSectionType.EDUCATION:
-                parsed_sections[section_type] = self.parse_resume_education(section_text)
-            elif section_type == ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS:
-                parsed_sections[section_type] = self.parse_resume_professional_development(section_text)
-            else:
-                parsed_sections[section_type] = section_text
-        self.logger.info("Resume parsing by detailed sections completed successfully")
-        return parsed_sections     
+        professional_development_list: list[str] = TextUtils.clean_text_list(professional_development_text)
+        self.logger.info(f"Successfully parsed {ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS} section")
+        return professional_development_list

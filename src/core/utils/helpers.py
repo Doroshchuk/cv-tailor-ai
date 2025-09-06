@@ -2,8 +2,8 @@ from logging import Logger
 from core.models.job_to_target import JobDetails
 from ..parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 from typing import Sequence
-import os
 import json
+from pathlib import Path
 
 class TextUtils:
     @staticmethod
@@ -50,11 +50,10 @@ class ValidationUtils:
 
 class PositionUtils:
     @staticmethod
-    def get_supported_positions(path_to_file: str, logger: Logger | None = None) -> list[str]:
+    def get_supported_positions(path_to_file: Path, logger: Logger | None = None) -> list[str]:
         positions = []
-        script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
         try:
-            with open(os.path.join(script_dir, path_to_file), "r") as f:
+            with path_to_file.open("r") as f:
                 roles = dict(json.load(f))
                 for role in roles:
                     positions.extend(roles[role]["aliases"])
@@ -72,10 +71,10 @@ class PositionUtils:
 
 class JobParserUtils:
     @staticmethod
-    def parse_job_details(path_to_file: str, logger: Logger | None = None) -> JobDetails:
-        script_dir = os.path.dirname(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+    def parse_job_details(path_to_file: Path, logger: Logger | None = None) -> JobDetails:
+        
         try:
-            with open(os.path.join(script_dir, path_to_file), "r") as f:
+            with path_to_file.open("r") as f:
                 job_details = json.load(f)
         except FileNotFoundError as e:
             error_message = f"Job config file not found: {e}"

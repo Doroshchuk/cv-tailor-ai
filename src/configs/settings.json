@@ -4,12 +4,12 @@
         "output_path": "resumes/parsed/",
         "supported_formats": [".docx"],
         "file_name": "Daria_Doroshchuk_MS_SDET",
-        "path_to_positions_file": "configs/positions.json",
+        "positions_file": "positions.json",
         "whitelisted_hard_skills": ["defect tracking"],
         "whitelisted_soft_skills": ["accountability"]
     },
     "job": {
-        "path_to_job_details_file": "configs/job_to_target.json"
+        "job_details_file": "job_to_target.json"
     },
     "logging": {
         "level": "INFO"

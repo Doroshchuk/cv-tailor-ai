@@ -1,8 +1,8 @@
 from typing import Dict, Any, Optional
 import os
 import json
-from .log_helper import LogHelper
-from ..models.settings import SettingsModel
+from core.utils.log_helper import LogHelper
+from core.models.settings import SettingsModel
 from dotenv import load_dotenv
 
 
@@ -40,6 +40,9 @@ class ConfigManager:
             error_message = f"No settings file found at {config_path}"
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
+
+    def get_openai_api_key(self) -> str:
+        return os.getenv("OPENAI_API_KEY")
 
     @property
     def settings(self) -> SettingsModel:

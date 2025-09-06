@@ -1,17 +1,14 @@
-import os
 from core.parsing.parser import ResumeParser
-from core.utils.config_manager import ConfigManager
-import json
+from core.services.config_manager import ConfigManager
+from core.jobscan.scraper import JobscanScraper
+from core.utils.helpers import JobParserUtils
+import core.utils.paths as path_utils
+
 
 config = ConfigManager()
-# Get the directory where this script is located
-script_dir = os.path.dirname(os.path.abspath(__file__))
-resume_path = os.path.join(script_dir, config.settings.resume.input_path, f"{config.settings.resume.file_name}.docx")
-
-resume_parser = ResumeParser(resume_path)
-resume_text = resume_parser.parse_resume_sections()
-with open(os.path.join(script_dir, config.settings.resume.output_path, f"{config.settings.resume.file_name}.json"), "w+") as f:
-    json.dump(resume_text, f)
-parsed_sections = resume_parser.parse_detailed_sections(resume_text)
-with open(os.path.join(script_dir, config.settings.resume.output_path, f"{config.settings.resume.file_name}_detailed.json"), "w+") as f:
-    json.dump(parsed_sections, f)
+resume_parser = ResumeParser(path_utils.get_original_resume_file_path())
+resume = resume_parser.parse()
+resume.write_to_file()
+job_details = JobParserUtils.parse_job_details(path_utils.get_job_to_target_file_path())
+jobscan_scraper = JobscanScraper(config.settings.jobscan, config.settings.playwright, config.settings.resume, job_details)
+jobscan_scraper.run_resume_scan_workflow()

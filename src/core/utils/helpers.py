@@ -1,6 +1,7 @@
 from logging import Logger
 from core.models.job_to_target import JobDetails
-from ..parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
+from core.models.prompt_instructions import Prompt
+from core.parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 from typing import Sequence
 import json
 from pathlib import Path
@@ -72,7 +73,6 @@ class PositionUtils:
 class JobParserUtils:
     @staticmethod
     def parse_job_details(path_to_file: Path, logger: Logger | None = None) -> JobDetails:
-        
         try:
             with path_to_file.open("r") as f:
                 job_details = json.load(f)
@@ -82,6 +82,19 @@ class JobParserUtils:
                 logger.error(error_message)
                 raise FileNotFoundError(error_message)
         return JobDetails(**job_details)
+
+class PromptParserUtils:
+    @staticmethod
+    def parse_prompt_instructions(path_to_file: Path, logger: Logger | None = None) -> Prompt:
+        try:
+            with path_to_file.open("r") as f:
+                prompt = json.load(f)
+        except FileNotFoundError as e:
+            error_message = f"Prompt Instructions file not found: {e}"
+            if logger:
+                logger.error(error_message)
+                raise FileNotFoundError(error_message)
+        return Prompt(**prompt)
 
 class EnumUtils:
     @staticmethod

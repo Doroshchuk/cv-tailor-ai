@@ -11,6 +11,9 @@
     "job": {
         "job_details_file": "job_to_target.json"
     },
+    "cv_tailor": {
+        "prompt_instructions_file": "prompt_instructions.json"
+    },
     "logging": {
         "level": "INFO"
     },

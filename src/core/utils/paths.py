@@ -28,6 +28,13 @@ def get_job_to_target_file_path() -> Path:
         / CONFIG.settings.job.job_details_file
     )
 
+def get_prompt_instructions_file_path() -> Path:
+    """Return the prompt instructions file path."""
+    return (
+        Path(get_configs_dir_path())
+        / CONFIG.settings.cv_tailor.prompt_instructions_file
+    )
+
 def get_positions_file_path() -> Path:
     """Return the positions file path."""
     return (

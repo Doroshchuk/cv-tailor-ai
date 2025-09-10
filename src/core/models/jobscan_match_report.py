@@ -1,10 +1,11 @@
+from curses import keyname
 import json
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 from enum import Enum
 from datetime import datetime, timezone
 import core.utils.paths as path_utils
-from pathlib import Path
+from core.models.prompt_instructions import Keyword
 
 
 class SkillApplianceType(str, Enum):
@@ -78,3 +79,17 @@ class JobscanMatchReport(BaseModel):
             json.dump(self.model_dump(mode="json"), f)
 
         print(f"[write_to_file] Wrote Jobscan Match Report JSON to: {path_to_match_report_path}  (exists={path_to_match_report_path.exists()})")
+
+    def get_keywords_to_prompt(self) -> dict[SkillType, list[Keyword]]:
+        keywords:  dict[SkillType, list[Keyword]] = {} 
+        keywords[SkillType.HARD_SKILL] = self._transform_skills(self.hard_skills)
+        keywords[SkillType.SOFT_SKILL] = self._transform_skills(self.soft_skills)
+        return keywords
+
+    def _transform_skills(self, skills: Dict[SkillApplianceType, List[Skill]]) -> list[Keyword]:
+        transformed_skills = []
+        for appliance_type in skills:
+            for skill in skills[appliance_type]:
+                if skill.is_supported:
+                    transformed_skills.append(Keyword(name=skill.name, required=skill.required_quantity, actual=skill.actual_quantity))
+        return transformed_skills

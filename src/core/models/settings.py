@@ -15,6 +15,9 @@ class ResumeSettings(BaseModel):
 class JobDetails(BaseModel):
     job_details_file: str
 
+class CvTailorSettings(BaseModel):
+    prompt_instructions_file: str
+
 class LoggingSettings(BaseModel):
     level: LogLevelEnum
 
@@ -44,6 +47,7 @@ class PlaywrightSettings(BaseModel):
 class SettingsModel(BaseModel):
     resume: ResumeSettings
     job: JobDetails
+    cv_tailor: CvTailorSettings
     logging: LoggingSettings
     parsing: ParsingSettings
     jobscan: JobscanSettings

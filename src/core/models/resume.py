@@ -1,9 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from pathlib import Path
 import json
 import core.utils.paths as path_utils
-from core.services.config_manager import ConfigManager
 
 class Header(BaseModel):
     name: Optional[str] = None
@@ -52,12 +50,10 @@ class Education(BaseModel):
     class Config:
         model_config = {"validate_assignment": True}  # validate on assignment
 
-class Resume(BaseModel):
-    header: Header
+class ResumeLite(BaseModel):
     professional_summary: ProfessionalSummary
     technical_skills: List[str] = Field(default_factory=list)
     professional_experience_list: List[ProfessionalExperience] = Field(default_factory=list)
-    education: Education
     professional_development_list: List[str] = Field(default_factory=list)
 
     class Config:
@@ -70,4 +66,33 @@ class Resume(BaseModel):
         with parsed_resume_file_path.open("w+") as f:
             json.dump(self.model_dump(mode="json"), f)
 
-        print(f"[write_to_file] Wrote resume JSON to: {parsed_resume_file_path}  (exists={parsed_resume_file_path.exists()})")
+        print(f"[write_to_file] Wrote resume JSON to: {parsed_resume_file_path} (exists={parsed_resume_file_path.exists()})")
+
+class Resume(ResumeLite):
+    header: Header
+    education: Education
+   
+    def get_lite_version(self):
+        return ResumeLite(
+            professional_summary=self.professional_summary, 
+            technical_skills=self.technical_skills, 
+            professional_experience_list=self.professional_experience_list, 
+            professional_development_list=self.professional_development_list
+        )
+
+class TailoredResumeLite(ResumeLite):
+    optional_additions: List[str] = Field(default_factory=list)
+
+    class Config:
+        model_config = {"validate_assignment": True}  # validate on assignment
+
+    def to_full_resume(self, header: Header, education: Education) -> Resume:
+        """Recombine with confidential parts to produce the full Resume."""
+        return Resume(
+            header=header,
+            professional_summary=self.professional_summary, 
+            technical_skills=self.technical_skills, 
+            professional_experience_list=self.professional_experience_list, 
+            education=education,
+            professional_development_list=self.professional_development_list
+        )

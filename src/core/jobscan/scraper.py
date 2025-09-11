@@ -94,7 +94,7 @@ class JobscanScraper:
                 page = context.new_page()
                 
                 # Add timeout for user agent evaluation
-                user_agent = page.evaluate("() => navigator.userAgent", timeout=10000)
+                user_agent = page.evaluate("() => navigator.userAgent")
                 
                 if not user_agent or len(user_agent.strip()) == 0:
                     raise ValueError("Empty user agent received")
@@ -167,10 +167,16 @@ class JobscanScraper:
             
             # Initialize Playwright
             playwright_instance = sync_playwright().start()
+            # Compute UA once (cached file will be used if fresh)
+            session_user_agent = JobscanScraper.get_cached_user_agent(
+                playwright_instance,
+                self.playwright_settings.user_agent_cache_path,
+                self.playwright_settings.user_agent_cache_max_age_days
+            )
             # Launch browser with error handling
             browser = self._launch_browser_with_retry(playwright_instance)
-            # Create context with error handling
-            context = self._create_browser_context_with_retry(browser)
+            # Pass the UA *string* to the context creator
+            context = self._create_browser_context_with_retry(browser, session_user_agent)
             # Create page and navigate
             page = context.new_page()
             self._navigate_to_dashboard_with_retry(page)
@@ -214,18 +220,11 @@ class JobscanScraper:
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"Failed to launch browser after {max_retries} attempts: {e}")
 
-    def _create_browser_context_with_retry(self, browser, max_retries: int = 3) -> BrowserContext:
+    def _create_browser_context_with_retry(self, browser, user_agent: Optional[str], max_retries: int = 3) -> BrowserContext:
         """Create browser context with retry logic."""
         for attempt in range(max_retries):
             try:
                 JobscanScraper.logger.info(f"Creating browser context (attempt {attempt + 1}/{max_retries})")
-                
-                # Get user agent with error handling
-                user_agent = JobscanScraper.get_cached_user_agent(
-                    browser.contexts[0].playwright if browser.contexts else None,
-                    self.playwright_settings.user_agent_cache_path,
-                    self.playwright_settings.user_agent_cache_max_age_days
-                )
                 
                 return browser.new_context(
                     storage_state=self.jobscan_settings.storage_state_path,

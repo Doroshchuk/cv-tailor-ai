@@ -84,16 +84,13 @@ class MatchReportPage:
         return jobscan_match_report
 
     def _process_skills(self, skill_type: SkillType, metric_name: str, whitelisted_skills: list[str]) -> list[Skill]:
-        if self._check_match_rate_bar_for_issues_exist(metric_name):
-                container = self.hard_skills_container if skill_type == SkillType.HARD_SKILL else self.soft_skills_container
-                skills_analyzer_component = SkillsAnalyzerComponent(self.page, self.playwright_helper, container, skill_type)
-                return skills_analyzer_component.process_skills(whitelisted_skills)
-        return []
+        container = self.hard_skills_container if skill_type == SkillType.HARD_SKILL else self.soft_skills_container
+        skills_analyzer_component = SkillsAnalyzerComponent(self.page, self.playwright_helper, container, skill_type)
+        return skills_analyzer_component.process_skills(whitelisted_skills)
 
     def _check_and_process_metric(self, metric_name: str, container: Locator, findings: Locator) -> dict[str, list[MetricFinding]]:
-        if self._check_match_rate_bar_for_issues_exist(metric_name):
-            metric_title = container.locator("h3").inner_text().split("\n")[0]
-            return { metric_title: self._collect_metric_findings(findings) }
+        metric_title = container.locator("h3").inner_text().split("\n")[0]
+        return { metric_title: self._collect_metric_findings(findings) }
 
     def _collect_metric_findings(self, findings: Locator) -> list[MetricFinding]:
         metric_findings: list[MetricFinding] = []

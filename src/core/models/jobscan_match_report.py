@@ -91,5 +91,5 @@ class JobscanMatchReport(BaseModel):
         for appliance_type in skills:
             for skill in skills[appliance_type]:
                 if skill.is_supported:
-                    transformed_skills.append(Keyword(name=skill.name, required=skill.required_quantity, actual=skill.actual_quantity))
+                    transformed_skills.append(Keyword(name=skill.name.lower(), required=skill.required_quantity, actual=skill.actual_quantity))
         return transformed_skills

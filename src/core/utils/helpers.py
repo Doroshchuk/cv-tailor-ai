@@ -5,6 +5,9 @@ from core.parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSumm
 from typing import Sequence
 import json
 from pathlib import Path
+from core.models.jobscan_match_report import JobscanMatchReport, SkillType
+from core.models.resume import Resume 
+from core.models.prompt_instructions import Keyword
 
 class TextUtils:
     @staticmethod
@@ -83,6 +86,32 @@ class JobParserUtils:
                 raise FileNotFoundError(error_message)
         return JobDetails(**job_details)
 
+class MatchReportParserUtils:
+    @staticmethod
+    def parse_match_report(path_to_file: Path, logger: Logger | None = None) -> JobscanMatchReport:
+        try:
+            with path_to_file.open("r") as f:
+                match_report = json.load(f)
+        except FileNotFoundError as e:
+            error_message = f"Match Report file not found: {e}"
+            if logger:
+                logger.error(error_message)
+                raise FileNotFoundError(error_message)
+        return JobscanMatchReport(**match_report)
+
+class ResumeParserUtils:
+    @staticmethod
+    def parse_resume(path_to_file: Path, logger: Logger | None = None) -> Resume:
+        try:
+            with path_to_file.open("r") as f:
+                resume = json.load(f)
+        except FileNotFoundError as e:
+            error_message = f"Resume file not found: {e}"
+            if logger:
+                logger.error(error_message)
+                raise FileNotFoundError(error_message)
+        return Resume(**resume)
+
 class PromptParserUtils:
     @staticmethod
     def parse_prompt_instructions(path_to_file: Path, logger: Logger | None = None) -> Prompt:
@@ -107,3 +136,10 @@ class EnumUtils:
         if logger:
             logger.warning(f"There is no matching for '{text}' in ResumeSectionType enum. Default 'header' is applied instead.")
         return ResumeSectionType.HEADER  # default fallback
+
+class KeywordUtils:
+    @staticmethod
+    def keywords_to_json(keywords: dict[SkillType, list[Keyword]]) -> str:
+        return json.dumps(
+            {k.value: [kw.model_dump(mode="json") for kw in v] for k, v in keywords.items()}
+        )

@@ -32,7 +32,22 @@ class Skill(BaseModel):
     actual_quantity: Optional[int] = None
 
     def define_appliance_type(self) -> SkillApplianceType:
-        return SkillApplianceType.APPLIED if self.actual_quantity >= self.required_quantity else SkillApplianceType.MISSING
+        return (
+            SkillApplianceType.APPLIED 
+            if self.actual_quantity >= self.required_quantity 
+            else SkillApplianceType.MISSING
+        )
+
+    def update_is_supported(self, whitelist) -> bool:
+        """Update the is_supported field based on a whitelist and current usage."""
+        if not self.name:
+            self.is_supported = False
+            return
+        self.is_supported = (
+            self.actual_quantity > 0
+            or self.name.lower() in whitelist
+        )
+        return self.is_supported
     
     class Config:
         model_config = {"validate_assignment": True}  # validate on assignment
@@ -82,14 +97,30 @@ class JobscanMatchReport(BaseModel):
 
     def get_keywords_to_prompt(self) -> dict[SkillType, list[Keyword]]:
         keywords:  dict[SkillType, list[Keyword]] = {} 
-        keywords[SkillType.HARD_SKILL] = self._transform_skills(self.hard_skills)
-        keywords[SkillType.SOFT_SKILL] = self._transform_skills(self.soft_skills)
+        keywords[SkillType.HARD_SKILL] = self._transform_skills(supported=True, skills=self.hard_skills)
+        keywords[SkillType.SOFT_SKILL] = self._transform_skills(supported=True, skills=self.soft_skills)
         return keywords
 
-    def _transform_skills(self, skills: Dict[SkillApplianceType, List[Skill]]) -> list[Keyword]:
+    def _transform_skills(self, supported: bool, skills: Dict[SkillApplianceType, List[Skill]]) -> list[Keyword]:
         transformed_skills = []
         for appliance_type in skills:
             for skill in skills[appliance_type]:
-                if skill.is_supported:
+                if skill.is_supported == supported:
                     transformed_skills.append(Keyword(name=skill.name.lower(), required=skill.required_quantity, actual=skill.actual_quantity))
         return transformed_skills
+
+    def get_unsupported_keywords(self) -> dict[SkillType, list[Keyword]]:
+        keywords:  dict[SkillType, list[Keyword]] = {} 
+        keywords[SkillType.HARD_SKILL] = self._transform_skills(supported=False, skills=self.hard_skills)
+        keywords[SkillType.SOFT_SKILL] = self._transform_skills(supported=False, skills=self.soft_skills)
+        return keywords
+
+    def _update_supported_skills(self, skill_type: SkillType, whitelist: list[str]) -> None:
+        skills = self.hard_skills if skill_type == SkillType.HARD_SKILL else self.soft_skills
+        for appliance_type in skills:
+            for skill in skills[appliance_type]:
+                skill.update_is_supported(whitelist)
+
+    def update_supported_skills(self, whitelisted_hard_skills: list[str], whitelisted_soft_skills: list[str]) -> None:
+        self._update_supported_skills(SkillType.HARD_SKILL, whitelisted_hard_skills)
+        self._update_supported_skills(SkillType.SOFT_SKILL, whitelisted_soft_skills)

@@ -34,15 +34,14 @@ class SkillsAnalyzerComponent:
         skill_name_colum_texts = self.name_columns.all_inner_texts()
         skill_matching_count_colum_texts = self.matching_count_columns.all_inner_texts()
         skill_required_column_column_texts = self.required_count_columns.all_inner_texts()
-        lowcased_whitelisted_skills = {skill.lower() for skill in whitelisted_skills}
         for i in range(len(skill_name_colum_texts)):
             skill_name = skill_name_colum_texts[i]
             skill_matching_count = 0
             if not self.playwright_helper.exists(self.matching_count_columns.nth(i).locator("span.x")):
                 skill_matching_count = int(skill_matching_count_colum_texts[i])
             skill_required_count = int(skill_required_column_column_texts[i].split()[0])
-            is_supported = skill_matching_count > 0 or skill_name.lower() in lowcased_whitelisted_skills
-            skill = Skill(name=skill_name, type=self.skill_type, required_quantity=skill_required_count, actual_quantity=skill_matching_count, is_supported=is_supported)
+            skill = Skill(name=skill_name, type=self.skill_type, required_quantity=skill_required_count, actual_quantity=skill_matching_count)
+            skill.update_is_supported()
             skills.append(skill)
 
         return skills

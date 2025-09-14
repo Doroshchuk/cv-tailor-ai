@@ -63,8 +63,8 @@ class MatchReportPage:
         
         jobscan_match_report = JobscanMatchReport(job_title=self.job_details.title, company=self.job_details.company, iteration=1, score=int(self.score.inner_text()), report_url=self.page.url)
         jobscan_match_report.metrics.update(self._check_and_process_metric("Searchability", self.searchability_container, self.searchability_metrics))
-        hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, "Hard Skills", self.resume_settings.whitelisted_hard_skills)
-        soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, "Soft Skills", self.resume_settings.whitelisted_soft_skills)
+        hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, "Hard Skills", self.resume_settings.get_normalized_whitelisted_hard_skills())
+        soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, "Soft Skills", self.resume_settings.get_normalized_whitelisted_soft_skills())
         sorted_hard_skills: dict[SkillApplianceType, list[Skill]] = {
             SkillApplianceType.APPLIED: [],
             SkillApplianceType.MISSING: []

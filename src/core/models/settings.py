@@ -1,6 +1,8 @@
+from functools import cached_property
 from pydantic import BaseModel
 from typing import List
 from core.utils.log_helper import LogLevelEnum
+from core.utils.normalization_helpers import NormalizationUtils
 
 
 class ResumeSettings(BaseModel):
@@ -11,6 +13,14 @@ class ResumeSettings(BaseModel):
     positions_file: str
     whitelisted_hard_skills: List[str]
     whitelisted_soft_skills: List[str]
+
+    @cached_property
+    def get_normalized_whitelisted_hard_skills(self) -> list[str]:
+        return NormalizationUtils.normalize_values(self.whitelisted_hard_skills)
+
+    @cached_property
+    def get_normalized_whitelisted_soft_skills(self) -> list[str]:
+        return NormalizationUtils.normalize_values(self.whitelisted_soft_skills)
 
 class JobDetails(BaseModel):
     job_details_file: str

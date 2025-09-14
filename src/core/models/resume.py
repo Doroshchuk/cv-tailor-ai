@@ -81,7 +81,7 @@ class Resume(ResumeLite):
         )
 
 class TailoredResumeLite(ResumeLite):
-    optional_additions: List[str] = Field(default_factory=list)
+    adjustment_notes: List[str] = Field(default_factory=list)
 
     class Config:
         model_config = {"validate_assignment": True}  # validate on assignment
@@ -96,3 +96,12 @@ class TailoredResumeLite(ResumeLite):
             education=education,
             professional_development_list=self.professional_development_list
         )
+
+    def write_to_file(self, company: str, job_title: str) -> None:
+        tailored_resume_file_path = path_utils.get_tailored_resume_file_path(company, job_title)
+        tailored_resume_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with tailored_resume_file_path.open("w+") as f:
+            json.dump(self.model_dump(mode="json"), f)
+
+        print(f"[write_to_file] Wrote tailored resume JSON to: {tailored_resume_file_path} (exists={tailored_resume_file_path.exists()})")

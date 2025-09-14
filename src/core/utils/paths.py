@@ -57,3 +57,11 @@ def get_parsed_resume_file_path() -> Path:
         / Path(CONFIG.settings.resume.output_path)
         / f"{CONFIG.settings.resume.file_name}.json"
     )
+
+def get_tailored_resume_file_path(company: str, job_title: str) -> Path:
+    """Return the tailored resume JSON output file path."""
+    return (
+        Path(get_configs_dir_path())
+        / Path(f"{company}_{job_title}")
+        / f"tailored_{CONFIG.settings.resume.file_name}.json"
+    )

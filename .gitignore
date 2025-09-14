@@ -203,8 +203,8 @@ cython_debug/
 .cursorindexingignore
 
 # Resume files
-resumes/original/*.docx
-resumes/parsed/*.json
+src/resumes/original/*.docx
+src/resumes/parsed/*.json
 
 # Virtual environment
 venv_for_cv_tailor_ai/
@@ -218,3 +218,6 @@ src/configs/job_to_target.json
 
 # Ignore any match_report*.json in any subdirectory of src/configs
 src/configs/*/match_report*.json
+
+# Ignore any tailored*.json in any subdirectory of src/configs
+src/configs/*/tailored*.json

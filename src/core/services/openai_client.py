@@ -1,4 +1,4 @@
-from openai import OpenAI, ResponseInputParam
+from openai import OpenAI
 from core.services.config_manager import ConfigManager
 
 
@@ -11,7 +11,6 @@ class OpenAIClient:
     def request_openai(
         self,
         prompt: str | dict,
-        response_format: dict | None = None,
         model: str = "gpt-4o-mini",
         temperature: float = 0.2,
     ) -> str:
@@ -37,7 +36,6 @@ class OpenAIClient:
         result = self.client.responses.create(
             model=model,
             input=input_messages,
-            response_format=response_format,
             temperature=temperature,
         )
 

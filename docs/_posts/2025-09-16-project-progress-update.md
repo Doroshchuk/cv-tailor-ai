@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "🚀 Project Update — AI Tailoring Stabilization & Prompt Enhancements"
+title: "Project Update — AI Tailoring Stabilization & Prompt Enhancements"
 ---
 
 ✅ Learning Progress

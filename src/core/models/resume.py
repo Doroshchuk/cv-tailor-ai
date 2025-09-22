@@ -1,3 +1,4 @@
+from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import json
@@ -97,7 +98,7 @@ class TailoredResumeLite(ResumeLite):
             professional_development_list=self.professional_development_list
         )
 
-    def write_to_file(self, company: str, job_title: str) -> None:
+    def write_to_file(self, company: str, job_title: str) -> Path:
         tailored_resume_file_path = path_utils.get_tailored_resume_file_path(company, job_title)
         tailored_resume_file_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -105,3 +106,4 @@ class TailoredResumeLite(ResumeLite):
             json.dump(self.model_dump(mode="json"), f)
 
         print(f"[write_to_file] Wrote tailored resume JSON to: {tailored_resume_file_path} (exists={tailored_resume_file_path.exists()})")
+        return tailored_resume_file_path

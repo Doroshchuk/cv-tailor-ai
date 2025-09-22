@@ -1,12 +1,14 @@
+from __future__ import annotations
 from enum import Enum
 from playwright.sync_api import Page, Locator
 from core.models.job_to_target import JobDetails
 from core.utils.ui_helpers import PlaywrightHelper
 from core.jobscan.pages.jobscan_report_modal import JobscanReportModal
 from core.models.jobscan_match_report import Check, CheckStatusType, JobscanMatchReport, MetricFinding, Skill, SkillType, SkillApplianceType
-from core.models.settings import ResumeSettings
+from core.models.settings import JobscanSettings, ResumeSettings
 from core.jobscan.pages.components.skills_analyzer_component import SkillsAnalyzerComponent
 import re
+from core.jobscan.pages.components.new_scan_component import NewScanComponent
 
 
 class SearchabilityMetrics(str, Enum):
@@ -20,9 +22,10 @@ class SearchabilityMetrics(str, Enum):
     FILE_TYPE = "File Type"
 
 class MatchReportPage:
-    def __init__(self, page: Page, playwright_helper: PlaywrightHelper, resume_settings: ResumeSettings, job_details: JobDetails) -> None:
+    def __init__(self, page: Page, playwright_helper: PlaywrightHelper, jobscan_settings: JobscanSettings, resume_settings: ResumeSettings, job_details: JobDetails) -> None:
         self.page = page
         self.playwright_helper = playwright_helper
+        self.jobscan_settings = jobscan_settings
         self.resume_settings = resume_settings
         self.job_details = job_details
         self.jobscan_report_modal = JobscanReportModal(self.page, self.playwright_helper)
@@ -47,6 +50,12 @@ class MatchReportPage:
         self.formatting_container = self.page.locator("div#formatting")
         self.formatting_metrics = self.page.locator("div#formatting + div.findingSection div.finding")
 
+        self.new_scan_component = NewScanComponent(
+            container=self.page.locator("div.modalCard"),
+            page=self.page,
+            playwright_helper=self.playwright_helper,
+            resume_settings=self.resume_settings)
+
     def _check_match_rate_bar_for_issues_exist(self, metric_name: str) -> bool:
         title = self.page.locator(f"//div[@class='match-rate-bar']//span[text()='{metric_name}']")
         issues_text = title.locator("//following-sibling::span")
@@ -58,13 +67,13 @@ class MatchReportPage:
         return False
 
     def process_match_report(self) -> JobscanMatchReport:
-        self.title.wait_for(state="visible", timeout=2000)
+        self.title.wait_for(state="visible", timeout=3000)
         self.jobscan_report_modal.dismiss_if_present()
         
         jobscan_match_report = JobscanMatchReport(job_title=self.job_details.title, company=self.job_details.company, iteration=1, score=int(self.score.inner_text()), report_url=self.page.url)
-        jobscan_match_report.metrics.update(self._check_and_process_metric("Searchability", self.searchability_container, self.searchability_metrics))
-        hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, "Hard Skills", self.resume_settings.get_normalized_whitelisted_hard_skills())
-        soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, "Soft Skills", self.resume_settings.get_normalized_whitelisted_soft_skills())
+        jobscan_match_report.metrics.update(self._check_and_process_metric(self.searchability_container, self.searchability_metrics))
+        hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, self.resume_settings.get_normalized_whitelisted_hard_skills)
+        soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, self.resume_settings.get_normalized_whitelisted_soft_skills)
         sorted_hard_skills: dict[SkillApplianceType, list[Skill]] = {
             SkillApplianceType.APPLIED: [],
             SkillApplianceType.MISSING: []
@@ -79,16 +88,16 @@ class MatchReportPage:
             sorted_soft_skills[skill.define_appliance_type()].append(skill)
         jobscan_match_report.hard_skills = sorted_hard_skills
         jobscan_match_report.soft_skills = sorted_soft_skills
-        jobscan_match_report.metrics.update(self._check_and_process_metric("Recruiter Tips", self.recruiter_tips_container, self.recruiter_tips_metrics))
-        jobscan_match_report.metrics.update(self._check_and_process_metric("Formatting", self.formatting_container, self.formatting_metrics))
+        jobscan_match_report.metrics.update(self._check_and_process_metric(self.recruiter_tips_container, self.recruiter_tips_metrics))
+        jobscan_match_report.metrics.update(self._check_and_process_metric(self.formatting_container, self.formatting_metrics))
         return jobscan_match_report
 
-    def _process_skills(self, skill_type: SkillType, metric_name: str, whitelisted_skills: list[str]) -> list[Skill]:
+    def _process_skills(self, skill_type: SkillType, whitelisted_skills: list[str]) -> list[Skill]:
         container = self.hard_skills_container if skill_type == SkillType.HARD_SKILL else self.soft_skills_container
         skills_analyzer_component = SkillsAnalyzerComponent(self.page, self.playwright_helper, container, skill_type)
         return skills_analyzer_component.process_skills(whitelisted_skills)
 
-    def _check_and_process_metric(self, metric_name: str, container: Locator, findings: Locator) -> dict[str, list[MetricFinding]]:
+    def _check_and_process_metric(self, container: Locator, findings: Locator) -> dict[str, list[MetricFinding]]:
         metric_title = container.locator("h3").inner_text().split("\n")[0]
         return { metric_title: self._collect_metric_findings(findings) }
 
@@ -146,3 +155,8 @@ class MatchReportPage:
         if job_details.url and url_input.input_value() != job_details.url:
             self.playwright_helper.human_like_fill_data(self.page, url_input, job_details.url)
         self.playwright_helper.human_like_mouse_move_and_click(self.page, update_details_button)
+
+    def rescan(self, path_to_resume: str, job_details: JobDetails) -> MatchReportPage:
+        self.new_scan_component.scan(path_to_resume, job_details)
+        self.page.wait_for_url(self.jobscan_settings.match_report_url_pattern, timeout=15000)
+        return MatchReportPage(page=self.page, playwright_helper=self.playwright_helper, jobscan_settings=self.jobscan_settings, resume_settings=self.resume_settings, job_details=job_details)

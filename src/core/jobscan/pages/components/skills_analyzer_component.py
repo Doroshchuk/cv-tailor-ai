@@ -41,7 +41,7 @@ class SkillsAnalyzerComponent:
                 skill_matching_count = int(skill_matching_count_colum_texts[i])
             skill_required_count = int(skill_required_column_column_texts[i].split()[0])
             skill = Skill(name=skill_name, type=self.skill_type, required_quantity=skill_required_count, actual_quantity=skill_matching_count)
-            skill.update_is_supported()
+            skill.update_is_supported(whitelisted_skills)
             skills.append(skill)
 
         return skills

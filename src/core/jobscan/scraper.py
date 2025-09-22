@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 from playwright.sync_api import Browser, BrowserContext, sync_playwright, Playwright, TimeoutError as PlaywrightTimeoutError
 import os
 import json
@@ -9,6 +9,9 @@ from core.utils.ui_helpers import PlaywrightHelper
 from core.models.job_to_target import JobDetails
 from core.utils.log_helper import LogHelper
 from core.models.jobscan_match_report import JobscanMatchReport
+from core.jobscan.pages.match_report_page import MatchReportPage
+from core.jobscan.pages.match_report_page import MatchReportPage
+from core.services.cv_tailor import TailorAIService
 
 
 class JobscanScraper:
@@ -143,9 +146,9 @@ class JobscanScraper:
             JobscanScraper.logger.warning(f"Could not save user agent to cache: {e}")
             # Don't raise - caching failure shouldn't break the main functionality
 
-    def run_resume_scan_workflow(self) -> Optional[JobscanMatchReport]:
+    def run_resume_tailoring_workflow(self) -> Optional[JobscanMatchReport]:
         """
-        Run the complete resume scanning workflow with comprehensive error handling.
+        Run the complete resume tailoring workflow with comprehensive error handling.
         
         Returns:
             JobscanMatchReport if successful, None if failed
@@ -181,7 +184,15 @@ class JobscanScraper:
             page = context.new_page()
             self._navigate_to_dashboard_with_retry(page)
             # Execute scanning workflow
-            report = self._execute_scanning_workflow(page)
+            report, match_report_page = self._execute_scanning_workflow(page)
+            # match_report = MatchReportParserUtils.parse_match_report((
+            #         Path(path_utils.get_configs_dir_path())
+            #         / "Delart_HW Test Automation Engineer/match_report_1.json"
+            #     ))
+
+            tailor_ai_service = TailorAIService(self.job_details)
+            tailored_resume = tailor_ai_service.tailor_cv(self.resume, report.get_keywords_to_prompt())
+            tailored_resume_path = tailored_resume.write_to_file(self.job_details.company, self.job_details.title)
             
             JobscanScraper.logger.info("Resume scan workflow completed successfully")
             return report
@@ -263,10 +274,10 @@ class JobscanScraper:
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"Navigation failed: {e}")
                     
-    def _execute_scanning_workflow(self, page) -> JobscanMatchReport:
+    def _execute_scanning_workflow(self, page) -> Tuple[JobscanMatchReport, MatchReportPage]:
         """Execute the scanning workflow with error handling."""
         try:
-            dashboard_page = DashboardPage(page, self.playwright_helper, self.jobscan_settings, self.resume_settings)
+            dashboard_page = DashboardPage(page=page, playwright_helper=self.playwright_helper, jobscan_settings=self.jobscan_settings, resume_settings=self.resume_settings)
             match_report_page = dashboard_page.scan(self.resume_path, self.job_details)
             report = match_report_page.process_match_report()
             
@@ -278,7 +289,7 @@ class JobscanScraper:
                 JobscanScraper.logger.warning(f"Failed to save report: {e}")
                 # Don't fail the entire workflow if saving fails
             
-            return report
+            return (report, match_report_page)
             
         except Exception as e:
             JobscanScraper.logger.error(f"Scanning workflow failed: {e}")

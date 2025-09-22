@@ -16,7 +16,4 @@ else:
     resume = ResumeParserUtils.parse_resume(path_utils.get_parsed_resume_file_path())
 job_details = JobParserUtils.parse_job_details(path_utils.get_job_to_target_file_path())
 jobscan_scraper = JobscanScraper(config.settings.jobscan, config.settings.playwright, config.settings.resume, job_details)
-match_report = jobscan_scraper.run_resume_scan_workflow()
-tailor_ai_service = TailorAIService(job_details)
-tailored_resume = tailor_ai_service.tailor_cv(resume, match_report.get_keywords_to_prompt())
-tailored_resume.write_to_file(job_details.company, job_details.title)
+match_report= jobscan_scraper.run_resume_tailoring_workflow()

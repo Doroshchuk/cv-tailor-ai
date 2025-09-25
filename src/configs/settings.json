@@ -2,6 +2,7 @@
     "resume": {
         "input_path": "resumes/original/",
         "output_path": "resumes/parsed/",
+        "template_path": "resumes/templates/",
         "supported_formats": [".docx"],
         "file_name": "Daria_Doroshchuk_MS_SDET",
         "positions_file": "positions.json",

@@ -8,6 +8,7 @@ from core.utils.normalization_helpers import NormalizationUtils
 class ResumeSettings(BaseModel):
     input_path: str
     output_path: str
+    template_path: str
     supported_formats: List[str]
     file_name: str
     positions_file: str

@@ -1,9 +1,15 @@
+from enum import Enum
 from pathlib import Path
 from core.services.config_manager import ConfigManager
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ConfigManager()
+
+class FileFormat(str, Enum):
+    JSON = ".json"
+    DOCX = ".docx"
+    PDF = ".pdf"
 
 def get_project_root_path() -> Path:
     """Return the project root directory."""
@@ -58,10 +64,19 @@ def get_parsed_resume_file_path() -> Path:
         / f"{CONFIG.settings.resume.file_name}.json"
     )
 
-def get_tailored_resume_file_path(company: str, job_title: str) -> Path:
-    """Return the tailored resume JSON output file path."""
+def get_resume_template_file_path() -> Path:
+    """Return the template resume file path."""
+    return (
+        Path(PROJECT_ROOT)
+        / Path(CONFIG.settings.resume.template_path)
+        / f"{CONFIG.settings.resume.file_name}_template.docx"
+    )
+
+def get_tailored_resume_file_path(company: str, job_title: str, format: FileFormat) -> Path:
+    f"""Return the tailored resume {format.value} output file path."""
+    print(format.value)
     return (
         Path(get_configs_dir_path())
         / Path(f"{company}_{job_title}")
-        / f"tailored_{CONFIG.settings.resume.file_name}.json"
+        / f"tailored_{CONFIG.settings.resume.file_name}{format.value}"
     )

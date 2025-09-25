@@ -55,7 +55,6 @@ class ResumeLite(BaseModel):
     professional_summary: ProfessionalSummary
     technical_skills: List[str] = Field(default_factory=list)
     professional_experience_list: List[ProfessionalExperience] = Field(default_factory=list)
-    professional_development_list: List[str] = Field(default_factory=list)
 
     class Config:
         model_config = {"validate_assignment": True}  # validate on assignment
@@ -72,13 +71,13 @@ class ResumeLite(BaseModel):
 class Resume(ResumeLite):
     header: Header
     education: Education
+    professional_development_list: List[str] = Field(default_factory=list)
    
     def get_lite_version(self):
         return ResumeLite(
             professional_summary=self.professional_summary, 
             technical_skills=self.technical_skills, 
-            professional_experience_list=self.professional_experience_list, 
-            professional_development_list=self.professional_development_list
+            professional_experience_list=self.professional_experience_list
         )
 
 class TailoredResumeLite(ResumeLite):
@@ -87,7 +86,7 @@ class TailoredResumeLite(ResumeLite):
     class Config:
         model_config = {"validate_assignment": True}  # validate on assignment
 
-    def to_full_resume(self, header: Header, education: Education) -> Resume:
+    def to_full_resume(self, header: Header, education: Education, professional_development_list: list[str]) -> Resume:
         """Recombine with confidential parts to produce the full Resume."""
         return Resume(
             header=header,
@@ -95,11 +94,11 @@ class TailoredResumeLite(ResumeLite):
             technical_skills=self.technical_skills, 
             professional_experience_list=self.professional_experience_list, 
             education=education,
-            professional_development_list=self.professional_development_list
+            professional_development_list=professional_development_list
         )
 
-    def write_to_file(self, company: str, job_title: str) -> Path:
-        tailored_resume_file_path = path_utils.get_tailored_resume_file_path(company, job_title)
+    def write_to_json_file(self, company: str, job_title: str) -> Path:
+        tailored_resume_file_path = path_utils.get_tailored_resume_file_path(company, job_title, path_utils.FileFormat.JSON)
         tailored_resume_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         with tailored_resume_file_path.open("w+") as f:

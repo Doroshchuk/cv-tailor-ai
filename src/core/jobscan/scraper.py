@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional, Tuple
 from playwright.sync_api import Browser, BrowserContext, sync_playwright, Playwright, TimeoutError as PlaywrightTimeoutError
 import os
@@ -11,7 +12,9 @@ from core.utils.log_helper import LogHelper
 from core.models.jobscan_match_report import JobscanMatchReport
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.jobscan.pages.match_report_page import MatchReportPage
-from core.services.cv_tailor import TailorAIService
+from core.utils.session_helpers import Session
+from core.utils.helpers import MatchReportParserUtils
+import core.utils.paths as path_utils
 
 
 class JobscanScraper:
@@ -146,63 +149,68 @@ class JobscanScraper:
             JobscanScraper.logger.warning(f"Could not save user agent to cache: {e}")
             # Don't raise - caching failure shouldn't break the main functionality
 
-    def run_resume_tailoring_workflow(self) -> Optional[JobscanMatchReport]:
-        """
-        Run the complete resume tailoring workflow with comprehensive error handling.
-        
-        Returns:
-            JobscanMatchReport if successful, None if failed
-            
-        Raises:
-            FileNotFoundError: If resume file doesn't exist
-            RuntimeError: If critical workflow steps fail
-        """
-         # Validate inputs before starting
+    def open_session(self) -> Session:
         self._validate_workflow_inputs()
 
-        playwright_instance = None
-        browser = None
-        context = None
-        page = None
+        pw = sync_playwright().start()
+        ua = self.get_cached_user_agent(
+            pw,
+            self.playwright_settings.user_agent_cache_path,
+            self.playwright_settings.user_agent_cache_max_age_days,
+        )
+        browser = self._launch_browser_with_retry(pw)
+        context = self._create_browser_context_with_retry(browser, ua)
+        page = context.new_page()
+        return Session(pw, browser, context, page)
 
+    def navigate_to_dashboard(self, session: Session) -> None:
+        self._navigate_to_dashboard_with_retry(session.page)
+
+    def scan_resume(self, session: Session) -> tuple[JobscanMatchReport, MatchReportPage]:
+        """
+        Do a fresh scan in the current page/session.
+        Returns (report, match_report_page).
+        """
+        dashboard_page = DashboardPage(page=session.page, playwright_helper=self.playwright_helper, jobscan_settings=self.jobscan_settings, resume_settings=self.resume_settings)
+        match_report_page = dashboard_page.scan(self.resume_path, self.job_details)
+        report = self._execute_report_processing_workflow(match_report_page)
+        return report, match_report_page
+
+    def rescan_resume(self, path_to_resume: str, job_details: JobDetails, match_report_page: MatchReportPage, iteration: int) -> tuple[JobscanMatchReport, MatchReportPage]:
+        """
+        Do rescan in the current page.
+        Returns (report, match_report_page).
+        """
+        new_match_report_page = match_report_page.rescan(path_to_resume, job_details)
+        report = self._execute_report_processing_workflow(new_match_report_page, iteration=iteration)
+        return report, new_match_report_page
+
+    def run_tailoring(self, existing_match_report_path: Optional[str] = None, keep_session_open: bool = False) -> tuple[JobscanMatchReport, Session, Optional[MatchReportPage]]:
         try:
-            JobscanScraper.logger.info("Starting resume scan workflow")
-            
-            # Initialize Playwright
-            playwright_instance = sync_playwright().start()
-            # Compute UA once (cached file will be used if fresh)
-            session_user_agent = JobscanScraper.get_cached_user_agent(
-                playwright_instance,
-                self.playwright_settings.user_agent_cache_path,
-                self.playwright_settings.user_agent_cache_max_age_days
-            )
-            # Launch browser with error handling
-            browser = self._launch_browser_with_retry(playwright_instance)
-            # Pass the UA *string* to the context creator
-            context = self._create_browser_context_with_retry(browser, session_user_agent)
-            # Create page and navigate
-            page = context.new_page()
-            self._navigate_to_dashboard_with_retry(page)
-            # Execute scanning workflow
-            report, match_report_page = self._execute_scanning_workflow(page)
-            # match_report = MatchReportParserUtils.parse_match_report((
-            #         Path(path_utils.get_configs_dir_path())
-            #         / "Delart_HW Test Automation Engineer/match_report_1.json"
-            #     ))
+            if existing_match_report_path:
+                match_report = MatchReportParserUtils.parse_match_report((
+                    Path(path_utils.get_configs_dir_path())
+                    / existing_match_report_path
+                ))
+                if keep_session_open:
+                    session = self.open_session()
+                    self.navigate_to_dashboard(session)
+            else:
+                session = self.open_session()
+                self.navigate_to_dashboard(session)
+                match_report, match_report_page = self.scan_resume(session)
 
-            tailor_ai_service = TailorAIService(self.job_details)
-            tailored_resume = tailor_ai_service.tailor_cv(self.resume, report.get_keywords_to_prompt())
-            tailored_resume_path = tailored_resume.write_to_file(self.job_details.company, self.job_details.title)
-            
-            JobscanScraper.logger.info("Resume scan workflow completed successfully")
-            return report
-        
+            return match_report, session, match_report_page
+
         except Exception as e:
-            JobscanScraper.logger.error(f"Workflow failed: {e}")
-            raise RuntimeError(f"Resume scan workflow failed: {e}")
+            JobscanScraper.logger.error(f"Tailoring workflow failed: {e}")
+            # close session on failure
+            if session and not keep_session_open:
+                session.close()
+            raise
         finally:
-            # Always cleanup resources
-            self._cleanup_resources(page, context, browser, playwright_instance)
+            if session and not keep_session_open:
+                session.close()
 
     def _validate_workflow_inputs(self) -> None:
         """Validate all inputs before starting the workflow."""
@@ -274,12 +282,10 @@ class JobscanScraper:
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"Navigation failed: {e}")
                     
-    def _execute_scanning_workflow(self, page) -> Tuple[JobscanMatchReport, MatchReportPage]:
+    def _execute_report_processing_workflow(self, match_report_page: MatchReportPage, iteration: int = 1) -> JobscanMatchReport:
         """Execute the scanning workflow with error handling."""
         try:
-            dashboard_page = DashboardPage(page=page, playwright_helper=self.playwright_helper, jobscan_settings=self.jobscan_settings, resume_settings=self.resume_settings)
-            match_report_page = dashboard_page.scan(self.resume_path, self.job_details)
-            report = match_report_page.process_match_report()
+            report = match_report_page.process_match_report(iteration=iteration)
             
             # Save report with error handling
             try:
@@ -289,7 +295,7 @@ class JobscanScraper:
                 JobscanScraper.logger.warning(f"Failed to save report: {e}")
                 # Don't fail the entire workflow if saving fails
             
-            return (report, match_report_page)
+            return report
             
         except Exception as e:
             JobscanScraper.logger.error(f"Scanning workflow failed: {e}")

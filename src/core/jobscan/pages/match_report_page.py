@@ -66,11 +66,11 @@ class MatchReportPage:
             return True
         return False
 
-    def process_match_report(self) -> JobscanMatchReport:
+    def process_match_report(self, iteration: int = 1) -> JobscanMatchReport:
         self.title.wait_for(state="visible", timeout=3000)
         self.jobscan_report_modal.dismiss_if_present()
         
-        jobscan_match_report = JobscanMatchReport(job_title=self.job_details.title, company=self.job_details.company, iteration=1, score=int(self.score.inner_text()), report_url=self.page.url)
+        jobscan_match_report = JobscanMatchReport(job_title=self.job_details.title, company=self.job_details.company, iteration=iteration, score=int(self.score.inner_text()), report_url=self.page.url)
         jobscan_match_report.metrics.update(self._check_and_process_metric(self.searchability_container, self.searchability_metrics))
         hard_skills: list[Skill] = self._process_skills(SkillType.HARD_SKILL, self.resume_settings.get_normalized_whitelisted_hard_skills)
         soft_skills: list[Skill] = self._process_skills(SkillType.SOFT_SKILL, self.resume_settings.get_normalized_whitelisted_soft_skills)
@@ -157,6 +157,7 @@ class MatchReportPage:
         self.playwright_helper.human_like_mouse_move_and_click(self.page, update_details_button)
 
     def rescan(self, path_to_resume: str, job_details: JobDetails) -> MatchReportPage:
+        self.playwright_helper.human_like_mouse_move_and_click(self.page, self.upload_and_rescan_button)
         self.new_scan_component.scan(path_to_resume, job_details)
         self.page.wait_for_url(self.jobscan_settings.match_report_url_pattern, timeout=15000)
         return MatchReportPage(page=self.page, playwright_helper=self.playwright_helper, jobscan_settings=self.jobscan_settings, resume_settings=self.resume_settings, job_details=job_details)

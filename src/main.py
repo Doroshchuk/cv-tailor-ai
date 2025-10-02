@@ -1,10 +1,9 @@
 from core.parsing.parser import ResumeParser
 from core.services.config_manager import ConfigManager
 from core.jobscan.scraper import JobscanScraper
-from core.utils.helpers import JobParserUtils, MatchReportParserUtils, ResumeParserUtils
+from core.utils.helpers import JobParserUtils, ResumeParserUtils
 import core.utils.paths as path_utils
 from core.services.cv_tailor import TailorAIService
-from pathlib import Path
 from core.exporting.resume_exporter import ResumeExporter
 
 

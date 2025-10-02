@@ -6,8 +6,8 @@
         "supported_formats": [".docx"],
         "file_name": "Daria_Doroshchuk_MS_SDET",
         "positions_file": "positions.json",
-        "whitelisted_hard_skills": ["continuous integration"],
-        "whitelisted_soft_skills": []
+        "whitelisted_hard_skills": ["continuous integration", "project execution"],
+        "whitelisted_soft_skills": ["reliability"]
     },
     "job": {
         "job_details_file": "job_to_target.json"

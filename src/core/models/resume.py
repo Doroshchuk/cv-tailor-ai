@@ -1,6 +1,6 @@
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import Dict, List, Literal, Optional
 import json
 import core.utils.paths as path_utils
 
@@ -80,8 +80,18 @@ class Resume(ResumeLite):
             professional_experience_list=self.professional_experience_list
         )
 
+class KeywordCoverage(BaseModel):
+    required: int
+    achieved: int
+    status: Literal['met', 'not met']
+    reason: str
+
+    class Config:
+        model_config = {"validate_assignment": True}  # validate on assignment
+
 class TailoredResumeLite(ResumeLite):
     adjustment_notes: List[str] = Field(default_factory=list)
+    keyword_coverage: Dict[str, KeywordCoverage] = Field(default_factory=dict)
 
     class Config:
         model_config = {"validate_assignment": True}  # validate on assignment

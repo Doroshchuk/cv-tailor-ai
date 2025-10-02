@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum
+import time
 from playwright.sync_api import Page, Locator
 from core.models.job_to_target import JobDetails
 from core.utils.ui_helpers import PlaywrightHelper
@@ -66,8 +67,19 @@ class MatchReportPage:
             return True
         return False
 
-    def process_match_report(self, iteration: int = 1) -> JobscanMatchReport:
+    def _wait_for_match_report_page_to_load(self, timeout_seconds: int = 1) -> None:
         self.title.wait_for(state="visible", timeout=3000)
+        self.upload_and_rescan_button.wait_for(state="visible", timeout=3000)
+        previous_score = self.score.inner_text()
+        while True:
+            time.sleep(timeout_seconds)
+            if self.score.inner_text() != previous_score:
+                previous_score = self.score.inner_text()
+            else:
+                break
+
+    def process_match_report(self, iteration: int = 1) -> JobscanMatchReport:
+        self._wait_for_match_report_page_to_load()
         self.jobscan_report_modal.dismiss_if_present()
         
         jobscan_match_report = JobscanMatchReport(job_title=self.job_details.title, company=self.job_details.company, iteration=iteration, score=int(self.score.inner_text()), report_url=self.page.url)

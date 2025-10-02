@@ -31,6 +31,10 @@ class NewScanComponent:
     def scan_button(self) -> Locator:
         return self.container.locator("//span[normalize-space(.) = 'Scan']/parent::button")
 
+    @property
+    def loading_overlay(self) -> Locator:
+        return self.container.locator(".loadingOverlay")
+
     def upload_resume(self, path_to_resume: str) -> None:
         self.playwright_helper.human_like_mouse_move_and_click(self.page, self.resume_text_area)
         with self.page.expect_file_chooser() as fch:
@@ -42,3 +46,5 @@ class NewScanComponent:
         self.playwright_helper.human_like_fill_data(self.page, self.job_description_text_area,  str(job_details))
         expect(self.scan_button).to_be_enabled(timeout=2000)
         self.playwright_helper.human_like_mouse_move_and_click(self.page, self.scan_button)
+        self.loading_overlay.wait_for(state="visible", timeout=3000)
+        self.loading_overlay.wait_for(state="hidden", timeout=15000)

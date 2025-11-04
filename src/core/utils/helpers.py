@@ -8,10 +8,11 @@ from pathlib import Path
 from core.models.jobscan_match_report import JobscanMatchReport, SkillType
 from core.models.resume import Resume 
 from core.models.prompt_instructions import Keyword
+from core.utils.log_helper import LogHelper
 
 class TextUtils:
     @staticmethod
-    def safe_split(text_to_split: str, separator: str, max_splits: int = -1, logger: Logger | None = None) -> list[str]:
+    def safe_split(text_to_split: str, separator: str, max_splits: int = -1, logger: LogHelper | None = None) -> list[str]:
         if separator in text_to_split:
             return text_to_split.split(separator, max_splits)
         if logger:
@@ -23,7 +24,7 @@ class TextUtils:
         return [text.strip() for text in text_list if text.strip()]
 
     @staticmethod
-    def safe_get_and_strip(list: list[str], index: int, default_value: str = "", logger: Logger | None = None) -> str:
+    def safe_get_and_strip(list: list[str], index: int, default_value: str = "", logger: LogHelper | None = None) -> str:
         try:
             return list[index].strip()
         except IndexError:
@@ -33,7 +34,7 @@ class TextUtils:
 
 class ValidationUtils:
     @staticmethod
-    def check_if_section_empty(section_text: list[str], section_type: ResumeSectionType, logger: Logger | None = None) -> bool:
+    def check_if_section_empty(section_text: list[str], section_type: ResumeSectionType, logger: LogHelper | None = None) -> bool:
         if not section_text:
             if logger:
                 logger.warning(f"{section_type.value} section is empty")
@@ -44,7 +45,7 @@ class ValidationUtils:
     def validate_required_fields(parsed_data: dict, 
     required_fields: Sequence[HeaderFields | ProfessionalSummaryFields | ProfessionalExperienceFields | EducationFields | ProfessionalDevelopmentFields | TechnicalSkillsFields], 
     section_type: ResumeSectionType,
-    logger: Logger | None = None) -> bool:
+    logger: LogHelper | None = None) -> bool:
         missing_fields = [field for field in required_fields if not parsed_data.get(field)]
         if missing_fields:
             if logger:
@@ -54,7 +55,7 @@ class ValidationUtils:
 
 class PositionUtils:
     @staticmethod
-    def get_supported_positions(path_to_file: Path, logger: Logger | None = None) -> list[str]:
+    def get_supported_positions(path_to_file: Path, logger: LogHelper | None = None) -> list[str]:
         positions = []
         try:
             with path_to_file.open("r") as f:
@@ -75,7 +76,7 @@ class PositionUtils:
 
 class JobParserUtils:
     @staticmethod
-    def parse_job_details(path_to_file: Path, logger: Logger | None = None) -> JobDetails:
+    def parse_job_details(path_to_file: Path, logger: LogHelper | None = None) -> JobDetails:
         try:
             with path_to_file.open("r") as f:
                 job_details = json.load(f)
@@ -88,7 +89,7 @@ class JobParserUtils:
 
 class MatchReportParserUtils:
     @staticmethod
-    def parse_match_report(path_to_file: Path, logger: Logger | None = None) -> JobscanMatchReport:
+    def parse_match_report(path_to_file: Path, logger: LogHelper | None = None) -> JobscanMatchReport:
         try:
             with path_to_file.open("r") as f:
                 match_report = json.load(f)
@@ -101,7 +102,7 @@ class MatchReportParserUtils:
 
 class ResumeParserUtils:
     @staticmethod
-    def parse_resume(path_to_file: Path, logger: Logger | None = None) -> Resume:
+    def parse_resume(path_to_file: Path, logger: LogHelper | None = None) -> Resume:
         try:
             with path_to_file.open("r") as f:
                 resume = json.load(f)
@@ -114,7 +115,7 @@ class ResumeParserUtils:
 
 class PromptParserUtils:
     @staticmethod
-    def parse_prompt_instructions(path_to_file: Path, logger: Logger | None = None) -> Prompt:
+    def parse_prompt_instructions(path_to_file: Path, logger: LogHelper | None = None) -> Prompt:
         try:
             with path_to_file.open("r") as f:
                 prompt = json.load(f)
@@ -127,7 +128,7 @@ class PromptParserUtils:
 
 class EnumUtils:
     @staticmethod
-    def get_section_type(text: str, logger: Logger | None = None) -> ResumeSectionType:
+    def get_section_type(text: str, logger: LogHelper | None = None) -> ResumeSectionType:
         """Map text to ResumeSectionType enum"""
         text_upper = text.strip().upper()
         for section_type in ResumeSectionType:

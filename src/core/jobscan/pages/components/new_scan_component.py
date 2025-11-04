@@ -17,7 +17,7 @@ class NewScanComponent:
 
     @property
     def resume_drag_and_drop_button(self) -> Locator:
-        return self.container.locator("div.resumeActions > label.upload")
+        return self.container.locator("div.resumeActions > button.upload")
 
     @property
     def resume_upload_input(self) -> Locator:

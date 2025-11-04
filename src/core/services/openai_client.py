@@ -1,5 +1,6 @@
 from openai import OpenAI
 from core.services.config_manager import ConfigManager
+import json
 
 
 class OpenAIClient:
@@ -35,7 +36,7 @@ class OpenAIClient:
 
         result = self.client.responses.create(
             model=model,
-            input=input_messages,
+            input=json.dumps(input_messages),
             temperature=temperature,
         )
 

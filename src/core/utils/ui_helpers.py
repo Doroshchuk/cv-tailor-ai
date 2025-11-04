@@ -121,3 +121,6 @@ class PlaywrightHelper:
             return element.count() > 0 and element.is_enabled()
         except (PlaywrightTimeoutError, Exception):
             return False
+
+    def get_class_attr(self, element: Locator) -> str:
+        return element.get_attribute("class") or ""

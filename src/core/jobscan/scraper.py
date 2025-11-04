@@ -1,10 +1,10 @@
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 from playwright.sync_api import Browser, BrowserContext, sync_playwright, Playwright, TimeoutError as PlaywrightTimeoutError
 import os
 import json
 from datetime import datetime, timedelta, timezone
-from core.models.settings import JobDetails, JobscanSettings, PlaywrightSettings, ResumeSettings
+from core.models.settings import JobscanSettings, PlaywrightSettings, ResumeSettings
 from core.jobscan.pages.dashboard_page import DashboardPage
 from core.utils.ui_helpers import PlaywrightHelper
 from core.models.job_to_target import JobDetails
@@ -109,7 +109,6 @@ class JobscanScraper:
                 JobscanScraper._save_user_agent_to_cache(path_to_cached_user_agent, user_agent)
                 JobscanScraper.logger.info("Successfully generated and cached user agent")
                 return user_agent
-                
             except (PlaywrightTimeoutError, ValueError) as e:
                 JobscanScraper.logger.warning(f"Attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries - 1:
@@ -130,6 +129,8 @@ class JobscanScraper:
                         browser.close()
                     except Exception as e:
                         JobscanScraper.logger.warning(f"Error closing browser: {e}")
+        else:
+            raise RuntimeError("Exhausted retries without valid user agent")
 
     @staticmethod
     def _save_user_agent_to_cache(path_to_cached_user_agent: str, user_agent: str) -> None:
@@ -166,26 +167,31 @@ class JobscanScraper:
     def navigate_to_dashboard(self, session: Session) -> None:
         self._navigate_to_dashboard_with_retry(session.page)
 
-    def scan_resume(self, session: Session) -> tuple[JobscanMatchReport, MatchReportPage]:
+    def scan_resume(self, session: Session, path_to_resume: str, iteration: int = 1) -> tuple[JobscanMatchReport, MatchReportPage]:
         """
         Do a fresh scan in the current page/session.
         Returns (report, match_report_page).
         """
         dashboard_page = DashboardPage(page=session.page, playwright_helper=self.playwright_helper, jobscan_settings=self.jobscan_settings, resume_settings=self.resume_settings)
-        match_report_page = dashboard_page.scan(self.resume_path, self.job_details)
-        report = self._execute_report_processing_workflow(match_report_page)
+        match_report_page = dashboard_page.scan(path_to_resume, self.job_details)
+        report = self._execute_report_processing_workflow(match_report_page, iteration)
         return report, match_report_page
 
-    def rescan_resume(self, path_to_resume: str, job_details: JobDetails, match_report_page: MatchReportPage, iteration: int) -> tuple[JobscanMatchReport, MatchReportPage]:
+    def rescan_resume(self, session: Session, path_to_resume: str, job_details: JobDetails, match_report_page: MatchReportPage | None, iteration: int) -> tuple[JobscanMatchReport, MatchReportPage]:
         """
         Do rescan in the current page.
         Returns (report, match_report_page).
         """
-        new_match_report_page = match_report_page.rescan(path_to_resume, job_details)
-        report = self._execute_report_processing_workflow(new_match_report_page, iteration=iteration)
-        return report, new_match_report_page
+        if not match_report_page:
+            report, match_report_page = self.scan_resume(session, path_to_resume, iteration)
+        else:
+            match_report_page = match_report_page.rescan(path_to_resume, job_details)
+            report = self._execute_report_processing_workflow(match_report_page, iteration=iteration)
+        return report, match_report_page
 
-    def run_tailoring(self, existing_match_report_path: Optional[str] = None, keep_session_open: bool = False) -> tuple[JobscanMatchReport, Session, Optional[MatchReportPage]]:
+    def run_tailoring(self, existing_match_report_path: Optional[str] = None, keep_session_open: bool = False) -> tuple[JobscanMatchReport, Session, MatchReportPage]:
+        match_report_page = None
+        
         try:
             if existing_match_report_path:
                 match_report = MatchReportParserUtils.parse_match_report((
@@ -198,7 +204,7 @@ class JobscanScraper:
             else:
                 session = self.open_session()
                 self.navigate_to_dashboard(session)
-                match_report, match_report_page = self.scan_resume(session)
+                match_report, match_report_page = self.scan_resume(session, self.resume_path)
 
             return match_report, session, match_report_page
 
@@ -238,6 +244,8 @@ class JobscanScraper:
                 JobscanScraper.logger.warning(f"Browser launch attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"Failed to launch browser after {max_retries} attempts: {e}")
+        else:
+            raise RuntimeError("Exhausted retries while trying to launch a browser")
 
     def _create_browser_context_with_retry(self, browser, user_agent: Optional[str], max_retries: int = 3) -> BrowserContext:
         """Create browser context with retry logic."""
@@ -260,6 +268,8 @@ class JobscanScraper:
                 JobscanScraper.logger.warning(f"Context creation attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"Failed to create browser context after {max_retries} attempts: {e}")
+        else:
+            raise RuntimeError("Exhausted retries while trying to create browser context")
 
     def _navigate_to_dashboard_with_retry(self, page, max_retries: int = 3) -> None:
         """Navigate to dashboard with retry logic."""

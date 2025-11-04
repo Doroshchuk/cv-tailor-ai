@@ -113,6 +113,14 @@ class MatchReportPage:
         metric_title = container.locator("h3").inner_text().split("\n")[0]
         return { metric_title: self._collect_metric_findings(findings) }
 
+    def _get_metric_status(self, element: Locator) -> CheckStatusType:
+        class_attr = self.playwright_helper.get_class_attr(element)
+        status_value = class_attr.split()[-1] if class_attr else None
+        try:
+            return CheckStatusType(status_value)
+        except ValueError as e:
+            raise
+
     def _collect_metric_findings(self, findings: Locator) -> list[MetricFinding]:
         metric_findings: list[MetricFinding] = []
         for finding in findings.all():
@@ -123,7 +131,7 @@ class MatchReportPage:
             finding_checks: list[Check] = []
 
             for check in checks:
-                status = CheckStatusType(check.locator("div.checkIcon").get_attribute("class").split()[-1])
+                status = self._get_metric_status(check.locator("div.checkIcon"))
                 evidence_button = check.locator("div.evidence")
                 update_button = check.locator("div.additional span:has-text('Update')")
                 details: list[str] = []
@@ -131,14 +139,14 @@ class MatchReportPage:
                     self.playwright_helper.human_like_mouse_move_and_click(self.page, evidence_button)
                     modal = self.page.locator("div#modal")
                     details.extend(line.strip() for line in modal.inner_text().splitlines() if line)
-                    self.playwright_helper.human_like_mouse_move_and_click(self.page, modal.locator("//div[@data-test='dismissableCloseIcon']"))
+                    self.playwright_helper.human_like_mouse_move_and_click(self.page, modal.locator("//button[@data-test='dismissableCloseIcon']"))
                 elif (status == CheckStatusType.FAIL or status == CheckStatusType.WARN) and self.playwright_helper.exists(update_button) and finding_title != "Job Title Match":
                     self.playwright_helper.human_like_mouse_move_and_click(self.page, update_button)
                     modal = self.page.locator("//div[contains(@class, 'modal')]")
                     modal_title = modal.get_by_role(role="heading").inner_text()
                     if modal_title == "Job Opportunity":
                         self._update_job_opportunity_data(self.job_details)
-                        status = CheckStatusType(check.locator("div.checkIcon").get_attribute("class").split()[-1])
+                        status = self._get_metric_status(check.locator("div.checkIcon"))
                     else:
                         error_message = f"There is no functionality implemented for {modal_title} within {self._collect_metric_findings.__name__} method"
                         raise NotImplementedError(error_message)

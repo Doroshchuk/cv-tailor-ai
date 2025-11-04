@@ -19,7 +19,7 @@ class ConfigManager:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = LogHelper("config_manager")
         if not hasattr(self, "_initialized"):
             self._initialized = True
@@ -41,7 +41,7 @@ class ConfigManager:
             self.logger.error(error_message)
             raise FileNotFoundError(error_message)
 
-    def get_openai_api_key(self) -> str:
+    def get_openai_api_key(self) -> Optional[str]:
         return os.getenv("OPENAI_API_KEY")
 
     @property

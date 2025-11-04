@@ -1,12 +1,14 @@
 from core.parsing.parser import ResumeParser
 from core.services.config_manager import ConfigManager
 from core.jobscan.scraper import JobscanScraper
+from core.utils import log_helper
 from core.utils.helpers import JobParserUtils, ResumeParserUtils
 import core.utils.paths as path_utils
 from core.services.cv_tailor import TailorAIService
 from core.exporting.resume_exporter import ResumeExporter
 
 
+logger = log_helper.LogHelper(__name__)
 config = ConfigManager()
 if not path_utils.get_parsed_resume_file_path().is_file():
     resume_parser = ResumeParser(path_utils.get_original_resume_file_path())
@@ -25,4 +27,8 @@ exporter = ResumeExporter()
 tailored_resume_docx_path = exporter.export(tailored_resume, job_details.company, job_details.title)
 exporter.docx_to_pdf(tailored_resume_docx_path)
 
-match_report, match_report_page = jobscan_scraper.rescan_resume(str(tailored_resume_docx_path), job_details, match_report_page, match_report.iteration + 1)
+if not match_report.iteration:
+    error = "Match reports is missing iteration info"
+    logger.error(error)
+    raise ValueError(error)
+match_report, match_report_page = jobscan_scraper.rescan_resume(session, str(tailored_resume_docx_path), job_details, match_report_page, match_report.iteration + 1)

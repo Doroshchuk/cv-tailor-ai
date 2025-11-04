@@ -48,7 +48,7 @@ class ResumeParser:
         try:
             self.logger.info("Starting to separate resume sections")
             doc = Document(str(self.resume_path))
-            sections = {}
+            sections: dict[ResumeSectionType, list[str]] = {}
             current_section = ResumeSectionType.HEADER
             sections[current_section] = []
 
@@ -82,8 +82,9 @@ class ResumeParser:
 
     def _parse_resume_header(self, header_text: list[str]) -> Header:
         if not header_text or len(header_text) < self.config.settings.parsing.min_header_lines:
-            self.logger.warning(f"{ResumeSectionType.HEADER.value} section has insufficient data {header_text}")
-            return {}
+            error = f"{ResumeSectionType.HEADER.value} section has insufficient data {header_text}"
+            self.logger.error(error)
+            raise ValueError(error)
 
         header = Header()
         try :
@@ -107,11 +108,13 @@ class ResumeParser:
             return header
         except IndexError as e:
             self.logger.error(f"Error parsing {ResumeSectionType.HEADER.value}: {e}")
-            return {}
+            raise
 
     def _parse_resume_professional_summary(self, professional_summary_text: list[str]) -> ProfessionalSummary:
         if ValidationUtils.check_if_section_empty(professional_summary_text, ResumeSectionType.PROFESSIONAL_SUMMARY):
-            return {}
+            error = f"{ResumeSectionType.PROFESSIONAL_SUMMARY.value} is missing"
+            self.logger.error(error)
+            raise ValueError(error)
         
         professional_summary = ProfessionalSummary()
         try:
@@ -122,11 +125,11 @@ class ResumeParser:
             return professional_summary
         except IndexError as e:
             self.logger.error(f"Error parsing {ResumeSectionType.PROFESSIONAL_SUMMARY.value}: {e}")
-            return {}
+            raise
     
     def _parse_resume_technical_skills(self, technical_skills_text: list[str]) -> list[str]:
         if ValidationUtils.check_if_section_empty(technical_skills_text, ResumeSectionType.TECHNICAL_SKILLS):
-            return {}
+            return []
 
         technical_skills: list[str] = []
         technical_skills.extend(TextUtils.clean_text_list(technical_skills_text))
@@ -160,8 +163,9 @@ class ResumeParser:
         lines = block.splitlines()
 
         if len(lines) < self.config.settings.parsing.min_role_lines:
-            self.logger.warning(f"Experience #{index} block has insufficient data: {block}")
-            return {}
+            error = f"Experience #{index} block has insufficient data: {block}"
+            self.logger.error(error)
+            raise ValueError(error)
 
         if self.config.settings.parsing.professional_experience_company_location_separator in lines[0]:
             company_parts = TextUtils.safe_split(lines[0], self.config.settings.parsing.professional_experience_company_location_separator)
@@ -191,7 +195,9 @@ class ResumeParser:
 
     def _parse_resume_education(self, education_text: list[str]) -> Education:
         if ValidationUtils.check_if_section_empty(education_text, ResumeSectionType.EDUCATION):
-            return {}
+            error = f"{ResumeSectionType.EDUCATION.value} is missing"
+            self.logger.error(error)
+            raise ValueError(error)
 
         education = Education()
         try:
@@ -222,11 +228,11 @@ class ResumeParser:
             return education
         except IndexError as e:
             self.logger.error(f"Error parsing {ResumeSectionType.EDUCATION.value}: {e}")
-            return {}
+            raise
     
     def _parse_resume_professional_development(self, professional_development_text: list[str]) -> list[str]:
         if ValidationUtils.check_if_section_empty(professional_development_text, ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS):
-            return {}
+            return []
         
         professional_development_list: list[str] = TextUtils.clean_text_list(professional_development_text)
         self.logger.info(f"Successfully parsed {ResumeSectionType.PROFESSIONAL_DEVELOPMENT_OR_AFFILIATIONS} section")

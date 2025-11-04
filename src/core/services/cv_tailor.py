@@ -12,9 +12,14 @@ import json
 class TailorAIService:
     def __init__(self, job_description: JobDetails):
         self.config = ConfigManager()
-        self.logger = LogHelper("cv_tailor_service")
+        self.logger = LogHelper("openai_client")
         self.job_description = job_description
-        self.openai_client = OpenAIClient(self.config.get_openai_api_key())
+        api_key = self.config.get_openai_api_key()
+        if not api_key:
+            error = "OpenAI api key is missing"
+            self.logger.error(error)
+            raise ValueError(error)
+        self.openai_client = OpenAIClient(api_key)
         self.prompt_instructions = PromptParserUtils.parse_prompt_instructions(path_utils.get_prompt_instructions_file_path(), self.logger)
 
     def tailor_cv(self, resume: Resume, keywords: dict[SkillType, list[Keyword]]) -> TailoredResumeLite:

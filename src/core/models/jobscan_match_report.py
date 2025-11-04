@@ -34,7 +34,7 @@ class Skill(BaseModel):
     def define_appliance_type(self) -> SkillApplianceType:
         return (
             SkillApplianceType.APPLIED 
-            if self.actual_quantity >= self.required_quantity 
+            if self.actual_quantity and self.required_quantity and self.actual_quantity >= self.required_quantity 
             else SkillApplianceType.MISSING
         )
 
@@ -42,9 +42,9 @@ class Skill(BaseModel):
         """Update the is_supported field based on a whitelist and current usage."""
         if not self.name:
             self.is_supported = False
-            return
+            return self.is_supported
         self.is_supported = (
-            self.actual_quantity > 0
+            self.actual_quantity > 0 if self.actual_quantity else False
             or self.name.lower() in whitelist
         )
         return self.is_supported
@@ -87,6 +87,8 @@ class JobscanMatchReport(BaseModel):
         model_config = {"validate_assignment": True}  # validate on assignment
 
     def write_to_file(self) -> None:
+        if not self.company or not self.job_title or not self.iteration:
+            raise ValueError("Missing data!")
         path_to_match_report_path = path_utils.get_jobscan_match_report_path(self.company, self.job_title, self.iteration)
         path_to_match_report_path.parent.mkdir(parents=True, exist_ok=True)
         
@@ -106,6 +108,8 @@ class JobscanMatchReport(BaseModel):
         for appliance_type in skills:
             for skill in skills[appliance_type]:
                 if skill.is_supported == supported:
+                    if skill.name is None or skill.required_quantity is None or skill.actual_quantity is None:
+                        raise ValueError("Missing data!")
                     transformed_skills.append(Keyword(name=skill.name.lower(), required=skill.required_quantity, actual=skill.actual_quantity))
         return transformed_skills
 

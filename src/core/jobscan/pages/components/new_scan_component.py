@@ -13,7 +13,7 @@ class NewScanComponent:
 
     @property
     def resume_text_area(self) -> Locator:
-        return self.container.get_by_placeholder("Paste resume text...")
+        return self.container.locator("textarea#resume-text-input")
 
     @property
     def resume_drag_and_drop_button(self) -> Locator:

@@ -191,6 +191,7 @@ class JobscanScraper:
 
     def run_tailoring(self, existing_match_report_path: Optional[str] = None, keep_session_open: bool = False) -> tuple[JobscanMatchReport, Session, MatchReportPage]:
         match_report_page = None
+        session = None
         
         try:
             if existing_match_report_path:

@@ -8,4 +8,5 @@ class JobDetails(BaseModel):
     description_details: list[str]
 
     def __str__(self) -> str:
-        return f"{self.title}\n{self.company}\n{"\n".join(self.description_details)}"
+        details_joined = "\n".join(self.description_details)
+        return f"{self.title}\n{self.company}\n{details_joined}"

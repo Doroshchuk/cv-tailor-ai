@@ -33,10 +33,11 @@ class MatchReportPage:
         self.jobscan_match_report = JobscanMatchReport()
 
         self.title = self.page.locator("//div[normalize-space(.)='Resume scan results']")
-        self.match_rate_title = self.page.get_by_role("heading", name="Match Rate")
-        self.score = self.page.locator("div#score span.number")
-        self.upload_and_rescan_button = self.page.locator("button#upload-and-scan")
-        self.match_rate_bars = self.page.locator("div.match-rate-bar")
+        self.scan_sidebar_container = self.page.locator("div.scan-sidebar")
+        self.match_rate_title = self.scan_sidebar_container.get_by_role("heading", name="Match Rate")
+        self.score = self.scan_sidebar_container.locator("div#score span.number")
+        self.upload_and_rescan_button = self.scan_sidebar_container.locator("button#upload-and-scan")
+        self.match_rate_bars = self.scan_sidebar_container.locator("div.match-rate-bar")
         # Searchability
         self.searchability_container = self.page.locator("div#searchability")
         self.searchability_metrics = self.page.locator("div#searchability + div.findingSection div.finding")
@@ -52,7 +53,7 @@ class MatchReportPage:
         self.formatting_metrics = self.page.locator("div#formatting + div.findingSection div.finding")
 
         self.new_scan_component = NewScanComponent(
-            container=self.page.locator("div.modalCard"),
+            container=self.page.locator("div.baseModal"),
             page=self.page,
             playwright_helper=self.playwright_helper,
             resume_settings=self.resume_settings)

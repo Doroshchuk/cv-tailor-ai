@@ -1,11 +1,11 @@
-from curses import keyname
 import json
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 from enum import Enum
 from datetime import datetime, timezone
 import core.utils.paths as path_utils
-from core.models.prompt_instructions import Keyword
+from core.models.prompt_instructions import Keyword, KeywordStatus
+from core.models.prompt_instructions import KeywordStatistics
 
 
 class SkillApplianceType(str, Enum):
@@ -97,21 +97,41 @@ class JobscanMatchReport(BaseModel):
 
         print(f"[write_to_file] Wrote Jobscan Match Report JSON to: {path_to_match_report_path}  (exists={path_to_match_report_path.exists()})")
 
-    def get_keywords_to_prompt(self) -> dict[SkillType, list[Keyword]]:
-        keywords:  dict[SkillType, list[Keyword]] = {} 
-        keywords[SkillType.HARD_SKILL] = self._transform_skills(supported=True, skills=self.hard_skills)
-        keywords[SkillType.SOFT_SKILL] = self._transform_skills(supported=True, skills=self.soft_skills)
-        return keywords
+    def get_keywords_to_prompt(self) -> KeywordStatistics:
+        return KeywordStatistics(
+            keywords={
+                SkillType.HARD_SKILL: self._transform_skills(skills=self.hard_skills),
+                SkillType.SOFT_SKILL: self._transform_skills(skills=self.soft_skills)
+            }
+        )
 
-    def _transform_skills(self, supported: bool, skills: Dict[SkillApplianceType, List[Skill]]) -> list[Keyword]:
-        transformed_skills = []
-        for appliance_type in skills:
-            for skill in skills[appliance_type]:
-                if skill.is_supported == supported:
-                    if skill.name is None or skill.required_quantity is None or skill.actual_quantity is None:
-                        raise ValueError("Missing data!")
-                    transformed_skills.append(Keyword(name=skill.name.lower(), required=skill.required_quantity, actual=skill.actual_quantity))
-        return transformed_skills
+    def _transform_skills(self, skills: Dict[SkillApplianceType, List[Skill]]) -> list[Keyword]:
+        keywords = []
+        for _, skills_for_type in skills.items():
+            for skill in skills_for_type:
+
+                if not skill.is_supported:
+                    keyword_status = KeywordStatus.DO_NOT_ADD
+                elif skill.actual_quantity == 0:
+                    keyword_status = KeywordStatus.NEEDS_INTEGRATION
+                else:
+                    if skill.actual_quantity >= skill.required_quantity:
+                        keyword_status = KeywordStatus.MUST_KEEP
+                    else:
+                        keyword_status = KeywordStatus.KEEP_AND_INCREASE
+
+                required_quantity= 0 if keyword_status == KeywordStatus.DO_NOT_ADD else skill.required_quantity
+
+                keyword = Keyword(
+                    name=skill.name,
+                    status=keyword_status,
+                    actual_quantity=skill.actual_quantity,
+                    required_quantity=required_quantity,
+                    min_final_quantity=skill.actual_quantity,
+                    quantity_to_add=max(0, required_quantity - skill.actual_quantity)
+                )
+                keywords.append(keyword)
+        return keywords
 
     def get_unsupported_keywords(self) -> dict[SkillType, list[Keyword]]:
         keywords:  dict[SkillType, list[Keyword]] = {} 

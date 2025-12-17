@@ -224,3 +224,5 @@ src/configs/*/match_report*.json
 src/configs/*/tailored*.json
 src/configs/*/tailored*.docx
 src/configs/*/tailored*.pdf
+
+.vscode/settings.json

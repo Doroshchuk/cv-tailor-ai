@@ -4,10 +4,12 @@
         "Your task is to update the CURRENT RESUME to better match the JOB DESCRIPTION by minimally adjusting existing content, while strictly obeying the KEYWORD CONTRACT.",
 
         "Keyword Contract Rules",
-        "- Use exact keyword strings only (no synonyms, no substitutions).",
+        "Use exact keyword strings only (no synonyms, no substitutions).",
         "* DO NOT ADD:",
         "- Do not introduce keywords with status DO_NOT_ADD.",
         "- If such a keyword already exists, leave it unchanged.",
+        "- In keyword_coverage, mark the status as 'unsupported'.",
+        "- Explain the reason as 'Keyword is marked DO_NOT_ADD by contract.'.",
         "* MUST_KEEP / KEEP_AND_INCREASE:",
         "- Do not remove or rewrite existing content if it risks reducing keyword occurrences.",
         "- Keyword count must remain ≥ min_final_quantity.",
@@ -28,7 +30,7 @@
         "Output",
         "Return valid JSON matching the Resume schema exactly, plus:",
         "- adjustment_notes: list of all edits and keyword placements",
-        "- keyword_coverage: per keyword → { required, before, after, min_final, added, status, reason }",
+        "- keyword_coverage: per keyword → { required, before_adjustment, after_adjustment, min_final_quantity, added, status ('met', 'not met', 'unsupported'), reason }",
         "Do not include extra fields.",
         "Do not wrap output in Markdown."
     ],
@@ -38,11 +40,12 @@
         "- Preserve all keywords with min_final_quantity > 0 (final count must be ≥ min_final_quantity).",
         "- Add keywords only where quantity_to_add > 0, adding exactly that many new occurrences.",
         "- Do not introduce keywords with status DO_NOT_ADD.",
+        "- For any keyword with status DO_NOT_ADD, you MUST set keyword_coverage[KEY].status to exactly 'unsupported' (never 'not met').",
         "- Use exact keyword strings only.",
         "- Prefer editing existing text (small phrase additions, parentheticals, short inserts). Avoid adding new bullets; only add new bullets in Summary or Skills if unavoidable.",
         "- Do not invent or change factual info (jobs, companies, dates, achievements).",
         "- Keep each role ≤ 6 bullets by merging/compressing if needed.",
         "- Return JSON matching the Resume schema exactly + adjustment_notes + keyword_coverage (no markdown, no extra fields).",
-        "If a keyword cannot be added truthfully, mark it as not_met in keyword_coverage and explain why — do not force it."
+        "- If a keyword cannot be added truthfully, mark it as 'not met' in keyword_coverage and explain why — do not force it."
     ]
 }

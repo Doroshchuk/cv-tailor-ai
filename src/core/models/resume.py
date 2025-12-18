@@ -1,5 +1,5 @@
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 from typing import Dict, List, Literal, Optional
 import json
 import core.utils.paths as path_utils
@@ -82,12 +82,25 @@ class Resume(ResumeLite):
 
 class KeywordCoverage(BaseModel):
     required: int
-    achieved: int
-    status: Literal['met', 'not met']
-    reason: str
+    before_adjustment: int = Field(
+        validation_alias=AliasChoices("before_adjustment", "before")
+    )
+    after_adjustment: int = Field(
+        validation_alias=AliasChoices("after_adjustment", "after")
+    )
+    min_final_quantity: int = Field(
+        validation_alias=AliasChoices("min_final_quantity", "min_final")
+    )
+    added: int
+    status: Literal['met', 'not met', 'unsupported']
+    reason: str = Field(default="No reason provided.")
 
     class Config:
-        model_config = {"validate_assignment": True}  # validate on assignment
+        model_config = {
+            "validate_assignment": True,
+            "populate_by_name": True,  # important
+            "extra": "forbid"       # reject unexpected keys
+        }
 
 class TailoredResumeLite(ResumeLite):
     adjustment_notes: List[str] = Field(default_factory=list)

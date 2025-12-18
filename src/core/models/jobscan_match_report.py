@@ -1,27 +1,11 @@
 import json
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
-from enum import Enum
 from datetime import datetime, timezone
 import core.utils.paths as path_utils
 from core.models.prompt_instructions import Keyword, KeywordStatus
 from core.models.prompt_instructions import KeywordStatistics
-
-
-class SkillApplianceType(str, Enum):
-    MISSING = "missing"
-    APPLIED = "applied"
-
-
-class SkillType(str, Enum):
-    SOFT_SKILL = "soft skill"
-    HARD_SKILL = "hard skill"
-
-
-class CheckStatusType(str, Enum):
-    WARN = "warn"
-    PASS = "pass"
-    FAIL = "fail"
+from core.models.enums import SkillType, SkillApplianceType, CheckStatusType
 
 
 class Skill(BaseModel):

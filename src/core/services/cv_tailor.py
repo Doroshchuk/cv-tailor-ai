@@ -4,8 +4,7 @@ import core.utils.paths as path_utils
 from core.utils.helpers import PromptParserUtils, KeywordUtils
 from core.utils.log_helper import LogHelper
 from core.models.resume import Resume, ResumeLite, TailoredResumeLite
-from core.models.prompt_instructions import Keyword
-from core.models.jobscan_match_report import SkillType
+from core.models.prompt_instructions import KeywordStatistics
 from core.models.job_to_target import JobDetails
 import json
 
@@ -22,7 +21,7 @@ class TailorAIService:
         self.openai_client = OpenAIClient(api_key)
         self.prompt_instructions = PromptParserUtils.parse_prompt_instructions(path_utils.get_prompt_instructions_file_path(), self.logger)
 
-    def tailor_cv(self, resume: Resume, keywords: dict[SkillType, list[Keyword]]) -> TailoredResumeLite:
+    def tailor_cv(self, resume: Resume, keyword_statistics: KeywordStatistics) -> TailoredResumeLite:
         system: str = self.prompt_instructions.get_system_instructions()
         task: str = self.prompt_instructions.get_task_instructions()
         resume_lite: ResumeLite = resume.get_lite_version()
@@ -32,7 +31,7 @@ class TailorAIService:
         {str(self.job_description)}
 
         KEYWORD REQUIREMENTS:
-        {KeywordUtils.keywords_to_json(keywords)}
+        {KeywordUtils.keywords_to_json(keyword_statistics)}
 
         CURRENT RESUME (JSON):
         {json.dumps(resume_lite.model_dump(mode="json"))}

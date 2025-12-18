@@ -1,13 +1,11 @@
-from logging import Logger
 from core.models.job_to_target import JobDetails
-from core.models.prompt_instructions import Prompt
+from core.models.prompt_instructions import KeywordStatistics, Prompt
 from core.parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 from typing import Sequence
 import json
 from pathlib import Path
-from core.models.jobscan_match_report import JobscanMatchReport, SkillType
+from core.models.jobscan_match_report import JobscanMatchReport
 from core.models.resume import Resume 
-from core.models.prompt_instructions import Keyword
 from core.utils.log_helper import LogHelper
 
 class TextUtils:
@@ -140,7 +138,7 @@ class EnumUtils:
 
 class KeywordUtils:
     @staticmethod
-    def keywords_to_json(keywords: dict[SkillType, list[Keyword]]) -> str:
+    def keywords_to_json(keyword_statistics: KeywordStatistics) -> str:
         return json.dumps(
-            {k.value: [kw.model_dump(mode="json") for kw in v] for k, v in keywords.items()}
+            {k.value: [kw.model_dump(mode="json") for kw in v] for k, v in keyword_statistics.keywords.items()}
         )

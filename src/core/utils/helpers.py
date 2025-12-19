@@ -1,11 +1,11 @@
-from core.models.job_to_target import JobDetails
-from core.models.prompt_instructions import KeywordStatistics, Prompt
-from core.parsing.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
+from core.utils.models.job_to_target import JobDetails
+from core.services.openai.models.prompt_instructions import KeywordStatistics, Prompt
+from core.parsing.models.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 from typing import Sequence
 import json
 from pathlib import Path
-from core.models.jobscan_match_report import JobscanMatchReport
-from core.models.resume import Resume 
+from core.jobscan.models.jobscan_match_report import JobscanMatchReport
+from core.parsing.models.resume import Resume 
 from core.utils.log_helper import LogHelper
 
 class TextUtils:

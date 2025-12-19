@@ -1,5 +1,5 @@
 from playwright.sync_api import Page, Locator
-from core.models.jobscan_match_report import SkillType, SkillApplianceType, Skill
+from core.jobscan.models.jobscan_match_report import SkillType, SkillApplianceType, Skill
 from core.utils.ui_helpers import PlaywrightHelper
 
 

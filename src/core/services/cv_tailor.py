@@ -1,12 +1,13 @@
-from core.services.config_manager import ConfigManager
-from core.services.openai_client import OpenAIClient
+from core.services.config.config_manager import ConfigManager
+from core.services.openai.openai_client import OpenAIClient
 import core.utils.paths as path_utils
 from core.utils.helpers import PromptParserUtils, KeywordUtils
 from core.utils.log_helper import LogHelper
-from core.models.resume import Resume, ResumeLite, TailoredResumeLite
-from core.models.prompt_instructions import KeywordStatistics
-from core.models.job_to_target import JobDetails
+from core.parsing.models.resume import Resume, ResumeLite, TailoredResumeLite
+from core.services.openai.models.prompt_instructions import KeywordStatistics
+from core.utils.models.job_to_target import JobDetails
 import json
+
 
 class TailorAIService:
     def __init__(self, job_description: JobDetails):

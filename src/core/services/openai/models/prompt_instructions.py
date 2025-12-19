@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict
 from enum import Enum
-from core.models.enums import SkillType
+from core.jobscan.models.enums import SkillType
 
 
 class KeywordStatus(str, Enum):

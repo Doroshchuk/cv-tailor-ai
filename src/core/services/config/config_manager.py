@@ -2,12 +2,12 @@ from typing import Dict, Any, Optional
 import os
 import json
 from core.utils.log_helper import LogHelper
-from core.models.settings import SettingsModel
+from core.services.config.models.settings import SettingsModel
 from dotenv import load_dotenv
 
 
 # Load .env file from src directory
-src_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+src_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 env_path = os.path.join(src_dir, ".env")
 load_dotenv(env_path)
 

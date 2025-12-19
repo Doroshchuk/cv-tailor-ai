@@ -2,11 +2,11 @@ from __future__ import annotations
 from enum import Enum
 import time
 from playwright.sync_api import Page, Locator
-from core.models.job_to_target import JobDetails
+from core.utils.models.job_to_target import JobDetails
 from core.utils.ui_helpers import PlaywrightHelper
 from core.jobscan.pages.jobscan_report_modal import JobscanReportModal
-from core.models.jobscan_match_report import Check, CheckStatusType, JobscanMatchReport, MetricFinding, Skill, SkillType, SkillApplianceType
-from core.models.settings import JobscanSettings, ResumeSettings
+from core.jobscan.models.jobscan_match_report import Check, CheckStatusType, JobscanMatchReport, MetricFinding, Skill, SkillType, SkillApplianceType
+from core.services.config.models.settings import JobscanSettings, ResumeSettings
 from core.jobscan.pages.components.skills_analyzer_component import SkillsAnalyzerComponent
 import re
 from core.jobscan.pages.components.new_scan_component import NewScanComponent

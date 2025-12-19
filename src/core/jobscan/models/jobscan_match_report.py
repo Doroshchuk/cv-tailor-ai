@@ -3,9 +3,8 @@ from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
 from datetime import datetime, timezone
 import core.utils.paths as path_utils
-from core.models.prompt_instructions import Keyword, KeywordStatus
-from core.models.prompt_instructions import KeywordStatistics
-from core.models.enums import SkillType, SkillApplianceType, CheckStatusType
+from core.services.openai.models.prompt_instructions import Keyword, KeywordStatus, KeywordStatistics
+from core.jobscan.models.enums import SkillType, SkillApplianceType, CheckStatusType
 
 
 class Skill(BaseModel):

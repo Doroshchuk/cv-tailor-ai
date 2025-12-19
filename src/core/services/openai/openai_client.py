@@ -1,5 +1,5 @@
 from openai import OpenAI
-from core.services.config_manager import ConfigManager
+from core.services.config.config_manager import ConfigManager
 import json
 
 

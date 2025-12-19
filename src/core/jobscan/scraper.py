@@ -4,12 +4,12 @@ from playwright.sync_api import Browser, BrowserContext, sync_playwright, Playwr
 import os
 import json
 from datetime import datetime, timedelta, timezone
-from core.models.settings import JobscanSettings, PlaywrightSettings, ResumeSettings
+from core.services.config.models.settings import JobscanSettings, PlaywrightSettings, ResumeSettings
 from core.jobscan.pages.dashboard_page import DashboardPage
 from core.utils.ui_helpers import PlaywrightHelper
-from core.models.job_to_target import JobDetails
+from core.utils.models.job_to_target import JobDetails
 from core.utils.log_helper import LogHelper
-from core.models.jobscan_match_report import JobscanMatchReport
+from core.jobscan.models.jobscan_match_report import JobscanMatchReport
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.utils.session_helpers import Session

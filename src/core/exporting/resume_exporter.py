@@ -1,4 +1,4 @@
-from core.models.resume import ResumeLite
+from core.parsing.models.resume import ResumeLite
 from docxtpl import DocxTemplate
 from pathlib import Path
 import core.utils.paths as path_utils

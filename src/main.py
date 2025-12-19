@@ -1,5 +1,5 @@
 from core.parsing.parser import ResumeParser
-from core.services.config_manager import ConfigManager
+from core.services.config.config_manager import ConfigManager
 from core.jobscan.scraper import JobscanScraper
 from core.utils import log_helper
 from core.utils.helpers import JobParserUtils, ResumeParserUtils

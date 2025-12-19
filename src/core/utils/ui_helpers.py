@@ -1,7 +1,7 @@
 from playwright.sync_api import Page, Locator, TimeoutError as PlaywrightTimeoutError
 from time import sleep
 import random
-from core.models.settings import PlaywrightSettings
+from core.services.config.models.settings import PlaywrightSettings
 from core.utils.log_helper import LogHelper
 
 

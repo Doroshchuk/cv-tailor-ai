@@ -29,10 +29,10 @@
     "jobscan": {
         "home_url": "https://app.jobscan.co/dashboard",
         "match_report_url_pattern": "https://app.jobscan.co/match-report/*",
-        "storage_state_path": "src/auth/storage_state.json"
+        "storage_state_path": "data/auth/storage_state.json"
     },
     "playwright": {
-        "user_agent_cache_path": "src/auth/user_agent.json",
+        "user_agent_cache_path": "data/auth/user_agent.json",
         "user_agent_cache_max_age_days": 30,
         "locale": "en-US",
         "timezone_id": "America/Los_Angeles",

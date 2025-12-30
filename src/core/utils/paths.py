@@ -3,7 +3,7 @@ from pathlib import Path
 from core.services.config.config_manager import ConfigManager
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 CONFIG = ConfigManager()
 
 class FileFormat(str, Enum):
@@ -19,9 +19,16 @@ def get_configs_dir_path() -> Path:
     """Return the configs directory (version-controlled)."""
     return PROJECT_ROOT / "configs"
 
+def get_data_dir_path() -> Path:
+    """Return the configs directory (version-controlled)."""
+    return PROJECT_ROOT / "data"
+
 def get_output_dir_path() -> Path:
     """Return the oytput directory (version-controlled)."""
-    return PROJECT_ROOT / "output"
+    return (
+        Path(get_data_dir_path())
+        / "output"
+    )
 
 def get_jobscan_match_report_path(company: str, job_title: str, iteration: int = 1) -> Path:
     """Return the jobscan match report file path."""
@@ -55,7 +62,7 @@ def get_positions_file_path() -> Path:
 def get_original_resume_file_path() -> Path:
     """Return the original resume file path."""
     return (
-        Path(PROJECT_ROOT)
+        Path(get_data_dir_path())
         / Path(CONFIG.settings.resume.input_path)
         / f"{CONFIG.settings.resume.file_name}.docx"
     )
@@ -63,7 +70,7 @@ def get_original_resume_file_path() -> Path:
 def get_parsed_resume_file_path() -> Path:
     """Return the parsed resume JSON output file path."""
     return (
-        Path(PROJECT_ROOT)
+        Path(get_data_dir_path())
         / Path(CONFIG.settings.resume.output_path)
         / f"{CONFIG.settings.resume.file_name}.json"
     )
@@ -71,7 +78,7 @@ def get_parsed_resume_file_path() -> Path:
 def get_resume_template_file_path() -> Path:
     """Return the template resume file path."""
     return (
-        Path(PROJECT_ROOT)
+        Path(get_data_dir_path())
         / Path(CONFIG.settings.resume.template_path)
         / f"{CONFIG.settings.resume.file_name}_template.docx"
     )

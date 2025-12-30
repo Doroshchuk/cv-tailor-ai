@@ -26,9 +26,7 @@ class JobscanScraper:
         self.job_details = job_details
         self.resume_settings = resume_settings
         self.playwright_helper = PlaywrightHelper(self.playwright_settings)
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.abspath(os.path.join(script_dir, "..", ".."))
-        self.resume_path = os.path.join(project_root, resume_settings.input_path, f"{resume_settings.file_name}.docx")
+        self.resume_path = path_utils.get_original_resume_file_path()
 
     @staticmethod
     def get_cached_user_agent(playwright: Playwright, path_to_cached_user_agent: str, max_age_days: int) -> str:

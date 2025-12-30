@@ -27,7 +27,7 @@ class ConfigManager:
 
     def _load_config(self) -> Dict[str, Any]:
         # Try to get config path from environment, fallback to default
-        config_path = os.getenv("CONFIG_PATH", "src/configs/settings.json")
+        config_path = os.getenv("CONFIG_PATH", "configs/settings.json")
         
         # Debug logging to see what's happening
         self.logger.info(f"Looking for config file at: {config_path}")

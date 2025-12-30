@@ -203,21 +203,22 @@ cython_debug/
 .cursorindexingignore
 
 # Resume files
-src/resumes/original/*.docx
-src/resumes/parsed/*.json
-src/resumes/templates/*.docx
+data/resumes/original/*.docx
+data/resumes/parsed/*.json
+data/resumes/templates/*.docx
 
 # Virtual environment
 venv_for_cv_tailor_ai/
 
 # Auth storage
-src/auth/storage_state.json
-src/auth/user_agent.json
+data/auth/*.json
 
 # Job details
-src/configs/job_to_target.json
+configs/job_to_target.json
 
 # Ignore output data
-src/output
+data/output/*/*.json
+data/output/*/*.docx
+data/output/*/*.pdf
 
 .vscode/settings.json

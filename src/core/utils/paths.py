@@ -19,10 +19,14 @@ def get_configs_dir_path() -> Path:
     """Return the configs directory (version-controlled)."""
     return PROJECT_ROOT / "configs"
 
+def get_output_dir_path() -> Path:
+    """Return the oytput directory (version-controlled)."""
+    return PROJECT_ROOT / "output"
+
 def get_jobscan_match_report_path(company: str, job_title: str, iteration: int = 1) -> Path:
     """Return the jobscan match report file path."""
     return (
-        Path(get_configs_dir_path())
+        Path(get_output_dir_path())
         / Path(f"{company}_{job_title}")
         / f"match_report_{iteration}.json"
     )
@@ -76,7 +80,7 @@ def get_tailored_resume_file_path(company: str, job_title: str, format: FileForm
     f"""Return the tailored resume {format.value} output file path."""
     print(format.value)
     return (
-        Path(get_configs_dir_path())
+        Path(get_output_dir_path())
         / Path(f"{company}_{job_title}")
         / f"tailored_{CONFIG.settings.resume.file_name}{format.value}"
     )

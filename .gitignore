@@ -217,12 +217,7 @@ src/auth/user_agent.json
 # Job details
 src/configs/job_to_target.json
 
-# Ignore any match_report*.json in any subdirectory of src/configs
-src/configs/*/match_report*.json
-
-# Ignore any tailored*.json/.docx/.pdf in any subdirectory of src/configs
-src/configs/*/tailored*.json
-src/configs/*/tailored*.docx
-src/configs/*/tailored*.pdf
+# Ignore output data
+src/output
 
 .vscode/settings.json

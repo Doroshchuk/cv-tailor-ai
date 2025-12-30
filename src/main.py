@@ -1,14 +1,14 @@
-from core.parsing.parser import ResumeParser
+from core.parsing.resume_parser import ResumeParser
 from core.services.config.config_manager import ConfigManager
 from core.jobscan.scraper import JobscanScraper
-from core.utils import log_helper
-from core.utils.helpers import JobParserUtils, ResumeParserUtils
+from core.utils.log_helper import LogHelper
+from core.parsing.parsing_utils import JobParserUtils, ResumeParserUtils
 import core.utils.paths as path_utils
-from core.services.cv_tailor import TailorAIService
+from core.services.cv.cv_tailor import TailorAIService
 from core.exporting.resume_exporter import ResumeExporter
 
 
-logger = log_helper.LogHelper(__name__)
+logger = LogHelper(__name__)
 config = ConfigManager()
 if not path_utils.get_parsed_resume_file_path().is_file():
     resume_parser = ResumeParser(path_utils.get_original_resume_file_path())

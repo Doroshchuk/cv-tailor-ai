@@ -7,13 +7,13 @@ from datetime import datetime, timedelta, timezone
 from core.services.config.models.settings import JobscanSettings, PlaywrightSettings, ResumeSettings
 from core.jobscan.pages.dashboard_page import DashboardPage
 from core.utils.ui_helpers import PlaywrightHelper
-from core.utils.models.job_to_target import JobDetails
+from core.parsing.models.job_to_target import JobDetails
 from core.utils.log_helper import LogHelper
 from core.jobscan.models.jobscan_match_report import JobscanMatchReport
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.utils.session_helpers import Session
-from core.utils.helpers import MatchReportParserUtils
+from core.parsing.parsing_utils import MatchReportParserUtils
 import core.utils.paths as path_utils
 
 

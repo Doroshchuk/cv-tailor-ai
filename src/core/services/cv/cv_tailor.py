@@ -1,11 +1,12 @@
 from core.services.config.config_manager import ConfigManager
 from core.services.openai.openai_client import OpenAIClient
 import core.utils.paths as path_utils
-from core.utils.helpers import PromptParserUtils, KeywordUtils
+from core.utils.helpers import KeywordUtils
+from core.parsing.parsing_utils import PromptParserUtils
 from core.utils.log_helper import LogHelper
 from core.parsing.models.resume import Resume, ResumeLite, TailoredResumeLite
 from core.services.openai.models.prompt_instructions import KeywordStatistics
-from core.utils.models.job_to_target import JobDetails
+from core.parsing.models.job_to_target import JobDetails
 import json
 
 

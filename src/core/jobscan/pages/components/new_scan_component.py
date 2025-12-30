@@ -1,7 +1,7 @@
 from playwright.sync_api import Locator, Page, expect
 from core.utils.ui_helpers import PlaywrightHelper
 from core.services.config.models.settings import ResumeSettings
-from core.utils.models.job_to_target import JobDetails
+from core.parsing.models.job_to_target import JobDetails
 
 
 class NewScanComponent:

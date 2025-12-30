@@ -1,7 +1,8 @@
 from docx import Document
 from core.parsing.models.enums import ResumeSectionType, HeaderFields, ProfessionalSummaryFields, ProfessionalExperienceFields, EducationFields, ProfessionalDevelopmentFields, TechnicalSkillsFields
 import re
-from core.utils.helpers import TextUtils, ValidationUtils, EnumUtils, PositionUtils
+from core.utils.helpers import TextUtils, ValidationUtils, EnumUtils
+from core.parsing.parsing_utils import PositionUtils
 from core.utils.log_helper import LogHelper
 from core.services.config.config_manager import ConfigManager
 from core.parsing.models.resume import Degree, Resume, Header, ProfessionalSummary, ProfessionalExperience, Education 

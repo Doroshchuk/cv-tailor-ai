@@ -2,7 +2,7 @@ from playwright.sync_api import Page, expect
 from core.utils.ui_helpers import PlaywrightHelper
 from core.jobscan.pages.match_report_page import MatchReportPage
 from core.services.config.models.settings import JobscanSettings, ResumeSettings
-from core.utils.models.job_to_target import JobDetails
+from core.parsing.models.job_to_target import JobDetails
 from core.jobscan.pages.components.new_scan_component import NewScanComponent
 
 

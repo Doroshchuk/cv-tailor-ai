@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 # Load .env file from src directory
-src_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+src_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../.."))
 env_path = os.path.join(src_dir, ".env")
 load_dotenv(env_path)
 

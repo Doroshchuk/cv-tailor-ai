@@ -6,9 +6,9 @@ from core.services.config.models.settings import SettingsModel
 from dotenv import load_dotenv
 
 
-# Load .env file from src directory
-src_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../.."))
-env_path = os.path.join(src_dir, ".env")
+# Load .env file from the project root
+project_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../../.."))
+env_path = os.path.join(project_root, ".env")
 load_dotenv(env_path)
 
 class ConfigManager:

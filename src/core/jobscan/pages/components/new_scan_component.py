@@ -46,5 +46,5 @@ class NewScanComponent:
         self.playwright_helper.human_like_fill_data(self.page, self.job_description_text_area,  str(job_details))
         expect(self.scan_button).to_be_enabled(timeout=2000)
         self.playwright_helper.human_like_mouse_move_and_click(self.page, self.scan_button)
-        self.loading_overlay.wait_for(state="visible", timeout=3000)
+        self.loading_overlay.wait_for(state="visible", timeout=5000)
         self.loading_overlay.wait_for(state="hidden", timeout=15000)

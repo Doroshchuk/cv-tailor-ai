@@ -20,11 +20,11 @@ def get_configs_dir_path() -> Path:
     return PROJECT_ROOT / "configs"
 
 def get_data_dir_path() -> Path:
-    """Return the configs directory (version-controlled)."""
+    """Return the data directory (version-controlled)."""
     return PROJECT_ROOT / "data"
 
 def get_output_dir_path() -> Path:
-    """Return the oytput directory (version-controlled)."""
+    """Return the output directory (version-controlled)."""
     return (
         Path(get_data_dir_path())
         / "output"

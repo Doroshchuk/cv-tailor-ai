@@ -217,8 +217,7 @@ data/auth/*.json
 configs/job_to_target.json
 
 # Ignore output data
-data/output/*/*.json
-data/output/*/*.docx
-data/output/*/*.pdf
+data/output/**/*
+!data/output/.gitkeep
 
 .vscode/settings.json
